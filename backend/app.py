@@ -99,11 +99,14 @@ def impact():
     return impact_service.calculate_impact()
 
 
-@app.get("/")
-def index():
-    return FileResponse(FRONTEND_DIR / "index.html")
-
-
-app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+# Mount uploaded product image files
 app.mount("/uploads", StaticFiles(directory=ai_service.UPLOAD_DIR, check_dir=False), name="uploads")
-app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")
+
+# Safely serve frontend assets only if directory exists locally/on server
+if FRONTEND_DIR.exists():
+    @app.get("/")
+    def index():
+        return FileResponse(FRONTEND_DIR / "index.html")
+
+    app.mount("/js", StaticFiles(directory=FRONTEND_DIR / "js"), name="js")
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="frontend")
