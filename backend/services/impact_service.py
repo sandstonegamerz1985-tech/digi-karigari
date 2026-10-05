@@ -1,6 +1,6 @@
 from typing import Any
 
-from backend.models import database
+from models import database
 
 
 def calculate_impact() -> dict[str, Any]:

@@ -1,8 +1,8 @@
 import uuid
 from typing import Any
 
-from backend.models import database
-from backend.services.market_service import quote_order
+from models import database
+from services.market_service import quote_order
 
 
 def place_order(

@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Any
 import uuid
 
-from backend.models import database
-from backend.services import ai_service, market_service
+from models import database
+from services import ai_service, market_service
 
 
 INITIAL_STOCK = 20
