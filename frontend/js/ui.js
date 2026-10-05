@@ -40,7 +40,9 @@ function renderProducts(products) {
     const card = element("article", "product-card");
     const imageWrap = element("div", "product-image-wrap");
     const image = element("img", "product-image");
-    image.src = product.image_url;
+    image.src = product.image_url.startsWith("http")
+  ? product.image_url
+  : `https://digi-karigari.onrender.com${product.image_url}`;
     image.alt = product.title;
     image.loading = "lazy";
     imageWrap.append(image);
