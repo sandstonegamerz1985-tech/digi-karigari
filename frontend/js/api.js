@@ -1,4 +1,4 @@
-const API_ROOT = "/api";
+const API_ROOT = "https://digi-karigari.onrender.com";
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_ROOT}${path}`, options);
