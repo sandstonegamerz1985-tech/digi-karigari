@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f2f0e8">
+    <meta name="description" content="A small marketplace connecting handmade work with new buyers.">
+    <title>Karigar | Made by hand, shared wider</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/js/ui.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Karigar home"><span class="brand-mark">K</span><span>karigar<span class="brand-period">.</span></span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#market" data-i18n="marketNav">Market</a>
+        <a href="#share" data-i18n="shareNav">Share your craft</a>
+        <a href="#impact" data-i18n="impactNav">Our impact</a>
+      </nav>
+      <button class="voice-button" id="voice-button" type="button" aria-label="Speak a marketplace command"><span aria-hidden="true">◖</span><span data-i18n="voice">Voice</span></button>
+    </header>
+
+    <main id="home">
+      <section class="intro-band" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow" data-i18n="eyebrow">A marketplace for makers</p>
+          <h1 id="page-title" data-i18n="headline">Made by hand.<br>Shared wider.</h1>
+          <p class="intro-note" data-i18n="intro">Good work deserves to travel. Find a handmade piece or bring your own work to market.</p>
+          <a class="text-link" href="#market"><span data-i18n="explore">Explore the market</span><span aria-hidden="true">↘</span></a>
+        </div>
+        <div class="intro-art" aria-label="Handwoven textile in rust, yellow, and green">
+          <div class="woven woven-back"></div><div class="woven woven-front"></div>
+          <span class="art-caption">01 / MADE WITH CARE</span>
+        </div>
+      </section>
+
+      <section class="market-section page-section" id="market" aria-labelledby="market-title">
+        <div class="section-heading">
+          <div><p class="eyebrow" data-i18n="marketEyebrow">The collection</p><h2 id="market-title" data-i18n="marketTitle">Find something made to last</h2></div>
+          <div class="buyer-switch" role="group" aria-label="Choose buyer type">
+            <button class="buyer-option active" type="button" data-buyer="retail" data-i18n="individual">For me</button>
+            <button class="buyer-option" type="button" data-buyer="wholesale" data-i18n="bulk">For my shop</button>
+          </div>
+        </div>
+        <p class="market-hint" id="market-hint" data-i18n="marketHint">Each piece has a maker and a story.</p>
+        <div class="product-grid" id="product-grid" aria-live="polite"></div>
+        <p class="empty-state" id="empty-state" hidden data-i18n="emptyMarket">No pieces here yet. Be the first to share your craft.</p>
+      </section>
+
+      <section class="share-section page-section" id="share" aria-labelledby="share-title">
+        <div class="share-copy">
+          <p class="eyebrow" data-i18n="shareEyebrow">Your hands made this</p>
+          <h2 id="share-title" data-i18n="shareTitle">Let the right people find it.</h2>
+          <p data-i18n="shareText">Take one clear photo. We will prepare a title and story for your listing.</p>
+          <div class="upload-steps"><span>01 <b data-i18n="stepPhoto">Photo</b></span><span>02 <b data-i18n="stepPrice">Price</b></span><span>03 <b data-i18n="stepDone">Done</b></span></div>
+        </div>
+        <form class="upload-form" id="upload-form">
+          <label class="photo-picker" for="product-image">
+            <img id="image-preview" alt="" hidden>
+            <span class="photo-icon" aria-hidden="true">＋</span>
+            <strong data-i18n="addPhoto">Add a product photo</strong>
+            <small data-i18n="photoHint">Tap to take or choose a photo</small>
+            <input id="product-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required>
+          </label>
+          <label class="price-label" for="price-input"><span data-i18n="yourPrice">Your price</span><span class="price-input-wrap"><span aria-hidden="true">₹</span><input id="price-input" name="price" type="number" min="1" max="10000000" step="1" placeholder="450" required></span></label>
+          <button class="primary-button" id="upload-submit" type="submit"><span data-i18n="publish">Prepare my listing</span><span aria-hidden="true">↗</span></button>
+          <p class="form-status" id="upload-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="impact-section" id="impact" aria-labelledby="impact-title">
+        <div class="impact-inner">
+          <div class="impact-heading"><p class="eyebrow" data-i18n="impactEyebrow">More than a sale</p><h2 id="impact-title" data-i18n="impactTitle">Every order moves work forward.</h2><p data-i18n="impactText">Live marketplace activity, shared openly.</p></div>
+          <div class="impact-metrics" aria-live="polite">
+            <article class="metric"><span class="metric-symbol" aria-hidden="true">₹</span><strong id="metric-earnings">₹0</strong><span data-i18n="earned">earned by makers</span><small>SDG 8 · Decent work</small></article>
+            <article class="metric"><span class="metric-symbol" aria-hidden="true">◎</span><strong id="metric-reach">0</strong><span data-i18n="makersReached">makers reached</span><small>SDG 10 · Reduced inequality</small></article>
+            <article class="metric"><span class="metric-symbol" aria-hidden="true">↗</span><strong id="metric-share">0%</strong><span data-i18n="communityShare">earnings to community makers</span><small id="metric-orders">0 orders</small></article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer"><a class="brand" href="#home"><span class="brand-mark">K</span><span>karigar<span class="brand-period">.</span></span></a><span data-i18n="footer">Made with care, carried further.</span><span class="demo-note">DEMO UPI · NO REAL PAYMENT</span></footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
