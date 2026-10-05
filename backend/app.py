@@ -8,9 +8,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend.models import database
-from backend.services import ai_service, impact_service, order_service, product_service
-
+from models import database
+from services import ai_service, impact_service, order_service, product_service
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT_DIR / "frontend"
