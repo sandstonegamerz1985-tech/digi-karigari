@@ -10,20 +10,20 @@ async function request(path, options = {}) {
 }
 
 export function getProducts(buyerType = "retail") {
-  return request(`/products?buyer_type=${encodeURIComponent(buyerType)}`);
+  return request(`/api/products?buyer_type=${encodeURIComponent(buyerType)}`);
 }
 
 export function uploadProduct(image, priceRupees) {
   const form = new FormData();
   form.append("image", image);
-  return request(`/products?price_rupees=${encodeURIComponent(priceRupees)}`, {
+  return request(`/api/products?price_rupees=${encodeURIComponent(priceRupees)}`, {
     method: "POST",
     body: form,
   });
 }
 
 export function placeOrder(order) {
-  return request("/orders", {
+  return request("/api/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(order),
@@ -31,5 +31,5 @@ export function placeOrder(order) {
 }
 
 export function getImpact() {
-  return request("/impact");
+  return request("/api/impact");
 }
