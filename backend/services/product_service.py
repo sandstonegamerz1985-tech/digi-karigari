@@ -12,7 +12,7 @@ def publish_product(image_bytes: bytes, filename: str, price_rupees: int) -> dic
     if not 1 <= price_rupees <= 10_000_000:
         raise ValueError("Price must be between 1 and 10,000,000 rupees")
 
-    # 1. Save uploaded image file to disk first
+    # 1. Save uploaded image file to disk
     file_ext = Path(filename).suffix or ".jpg"
     unique_filename = f"{uuid.uuid4().hex}{file_ext}"
     image_path = ai_service.UPLOAD_DIR / unique_filename
@@ -23,23 +23,27 @@ def publish_product(image_bytes: bytes, filename: str, price_rupees: int) -> dic
 
     relative_image_url = f"/uploads/{unique_filename}"
 
-    # 2. Get title & description safely from AI service
+    # 2. Get AI-generated listing details safely
     ai_details = ai_service.generate_listing_details(image_bytes)
 
     title = ai_details.get("title", "Handcrafted Artisan Item")
     description = ai_details.get("description", "A beautiful handcrafted product.")
+    category = ai_details.get("category", "Handicrafts")  # Required by SQLite schema
     tags = ai_details.get("tags", ["handmade", "artisan"])
 
-    # 3. Construct product dictionary with all required database keys
+    # Format tags as pipe-separated string for SQLite (e.g., "handmade|artisan")
+    tags_str = "|".join(tags) if isinstance(tags, list) else str(tags)
+
+    # 3. Construct payload matching database.py schema
     product_data = {
         "id": uuid.uuid4().hex,
         "artisan_id": "artisan-demo",
         "title": title,
+        "category": category,           # FIX: Added required category key
+        "tags": tags_str,
         "description": description,
         "image_url": relative_image_url,
-        "tags": "|".join(tags) if isinstance(tags, list) else str(tags),
         "price_paise": price_rupees * 100,
-        "price_rupees": price_rupees,
         "stock": INITIAL_STOCK,
     }
 
