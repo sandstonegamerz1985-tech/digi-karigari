@@ -1,3 +1,4 @@
+from config import GEMINI_API_KEY, UPLOAD_FOLDER, DATABASE_PATH
 import os
 import sqlite3
 from contextlib import closing, contextmanager
