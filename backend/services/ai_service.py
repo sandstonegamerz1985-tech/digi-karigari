@@ -1,3 +1,8 @@
+from pathlib import Path
+from config import UPLOAD_FOLDER
+
+# Define UPLOAD_DIR for app.py to reference
+UPLOAD_DIR = Path(UPLOAD_FOLDER)
 import google.generativeai as genai
 from PIL import Image
 from config import GEMINI_API_KEY
