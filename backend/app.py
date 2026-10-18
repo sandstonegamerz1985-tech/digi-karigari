@@ -1,3 +1,4 @@
+from config import GEMINI_API_KEY, UPLOAD_FOLDER, DATABASE_PATH
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
