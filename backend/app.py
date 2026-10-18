@@ -1,14 +1,16 @@
-from config import GEMINI_API_KEY, UPLOAD_FOLDER, DATABASE_PATH
+import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
-import logging
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from config import DATABASE_PATH, GEMINI_API_KEY, UPLOAD_FOLDER
 from models import database
 from services import ai_service, impact_service, order_service, product_service
 
@@ -29,6 +31,15 @@ app = FastAPI(
     version="1.0.0",
     description="A local-first artisan marketplace prototype with demo payments.",
     lifespan=lifespan,
+)
+
+# 1. Enable CORS for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust to explicit Vercel domain in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -54,6 +65,7 @@ def products(buyer_type: Literal["retail", "wholesale"] = Query(default="retail"
 
 @app.post("/api/products", status_code=201)
 async def upload_product(
+    request: Request,
     image: UploadFile = File(...),
     price_rupees: int = Query(ge=1, le=10_000_000),
 ):
@@ -66,11 +78,22 @@ async def upload_product(
         raise HTTPException(status_code=413, detail="Image must be 8 MB or smaller")
 
     try:
-        return product_service.publish_product(
+        # Build base server URL (e.g., https://your-backend.onrender.com)
+        base_url = str(request.base_url).rstrip("/")
+
+        result = product_service.publish_product(
             image_bytes,
             image.filename or "handmade-craft",
             price_rupees,
         )
+
+        # Convert relative upload path to full URL for cross-origin frontend access
+        if isinstance(result, dict) and "image_url" in result:
+            if not result["image_url"].startswith("http"):
+                result["image_url"] = f"{base_url}{result['image_url']}"
+
+        return result
+
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     except Exception as error:
@@ -100,10 +123,10 @@ def impact():
     return impact_service.calculate_impact()
 
 
-# Mount uploaded product image files
+# Mount static uploads
 app.mount("/uploads", StaticFiles(directory=ai_service.UPLOAD_DIR, check_dir=False), name="uploads")
 
-# Safely serve frontend assets only if directory exists locally/on server
+# Safely serve frontend assets if available locally
 if FRONTEND_DIR.exists():
     @app.get("/")
     def index():
