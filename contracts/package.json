@@ -1,0 +1,8 @@
+{
+  "name": "digi-karigari-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"compile": "solcjs --base-path . --include-path node_modules --bin --abi DigiKarigari.sol -o artifacts"},
+  "dependencies": {"@openzeppelin/contracts":"^5.1.0"},
+  "devDependencies": {"solc":"^0.8.24"}
+}
