@@ -1,11 +1,15 @@
 import io
 import json
 import logging
+from pathlib import Path
 from PIL import Image
 import google.generativeai as genai
-from config import GEMINI_API_KEY
+from config import GEMINI_API_KEY, UPLOAD_FOLDER
 
 logger = logging.getLogger(__name__)
+
+# Define UPLOAD_DIR so product_service and app.py can import or reference it
+UPLOAD_DIR = Path(UPLOAD_FOLDER)
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -30,7 +34,6 @@ def generate_listing_details(image_input, price: str = "") -> dict:
 
         model = genai.GenerativeModel("gemini-1.5-flash")
         
-        # PROMPT TO STRICTLY SEPARATE TITLE, DESCRIPTION, CATEGORY AND TAGS
         prompt = (
             "Analyze this product photo of an Indian handcrafted craft item. "
             "Return JSON format with the following keys:\n"
