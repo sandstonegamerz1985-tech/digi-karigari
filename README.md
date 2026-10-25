@@ -295,6 +295,7 @@ only in Render, never in GitHub or in the frontend. Note that live AI calls may 
 | Deployed site says "Cannot reach the server" | Render free plan is probably waking up; wait a minute. Also check `VITE_API_URL` on Vercel and that you redeployed after setting it |
 | Images missing on the deployed site | Photos uploaded by sellers vanish on Render's free plan after a restart (see section 9). Check `VITE_API_URL` too, since images load from the backend address |
 | Refreshing a page on Vercel gives 404 | `frontend/vercel.json` is missing or Root Directory is not `frontend` |
+| Render log: `Attribute "app" not found in module "app"` | The Start Command is wrong. It must be exactly `uvicorn app.main:app --host 0.0.0.0 --port $PORT` with Root Directory `backend` (the Blueprint sets this for you) |
 | Render build fails on `psycopg` | Make sure `PYTHON_VERSION` is set (render.yaml sets it) and `requirements.txt` includes `psycopg[binary]` |
 | Login says incorrect email or password | Run `python -m app.seed --reset`; demo password is `demo1234` |
 | Images do not show | Make sure the backend is running; seed images are created by the seed script |
