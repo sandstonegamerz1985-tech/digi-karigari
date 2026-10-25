@@ -28,11 +28,7 @@ def _cors_origins() -> list[str]:
 
 def _cors_regex() -> str:
     value = os.getenv("CORS_ORIGIN_REGEX", "").strip().strip("\"'").strip()
-    if not value and os.getenv("APP_ENV", "development") == "production":
-        # Deployed default: allow any *.vercel.app site (there are no cookies, only a token the page
-        # itself holds, so this is safe for a demo). Set CORS_ORIGIN_REGEX to something else to change it.
-        return r"https://.*\.vercel\.app"
-    return value
+    return value or r"https://.*\.vercel\.app"
 
 
 def _flag(name: str, default: bool = False) -> bool:
