@@ -6,3 +6,5 @@ python-multipart>=0.0.9
 pyjwt>=2.8
 python-dotenv>=1.0
 httpx>=0.27
+# Driver for PostgreSQL (used on Render). Harmless when you use SQLite locally.
+psycopg[binary]>=3.1

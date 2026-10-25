@@ -53,7 +53,7 @@ export default function App() {
             <Link to="/policy/shipping">Shipping</Link> · <Link to="/policy/refunds">Refunds</Link> ·{" "}
             <Link to="/features">Feature status</Link>
           </p>
-          <p className="muted small">Digi Karigari - college demo. Sample artisans and products are fictional.</p>
+          <p className="muted small">&copy; Digi Karigari</p>
         </div>
       </footer>
     </>

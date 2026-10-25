@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import models  # noqa: F401  (importing registers the tables)
+from . import seed
 from .config import settings
 from .database import Base, engine
 from .routers import admin, ai, artisans, auth, orders, planned, products
@@ -18,6 +19,11 @@ for _sub in ("products", "seed"):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)  # creates tables if they do not exist yet
+    # On hosts with a temporary disk (like Render's free plan) the sample pictures vanish on every
+    # restart, so we quietly re-create any that are missing.
+    seed.ensure_seed_images()
+    if settings.AUTO_SEED:
+        seed.run()  # does nothing if the database already has data
     yield
 
 
@@ -26,6 +32,7 @@ app = FastAPI(title="Digi Karigari API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
     allow_credentials=False,  # we use an Authorization header, not cookies
     allow_methods=["*"],
     allow_headers=["*"],

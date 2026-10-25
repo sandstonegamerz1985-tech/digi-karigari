@@ -1,8 +1,11 @@
 // All communication with the backend lives in this file.
 // Every function here matches an endpoint listed in the README "API summary".
 
-const BASE = import.meta.env.VITE_API_BASE || "/api";
-const ORIGIN = import.meta.env.VITE_BACKEND_ORIGIN || "";
+// VITE_API_URL is empty on your own computer (the Vite proxy handles /api and /uploads).
+// On Vercel it is the address of the Render backend, e.g. https://digi-karigari-api.onrender.com
+const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const BASE = API_URL + "/api";
+const ORIGIN = API_URL; // product photos are served by the backend, so they need the same prefix
 const TOKEN_KEY = "dk_token";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
@@ -62,7 +65,12 @@ async function request(path, { method = "GET", json, form, params } = {}) {
   try {
     res = await fetch(url, { method, headers, body });
   } catch {
-    throw new ApiError("Cannot reach the server. Is the backend running on port 8000?", 0);
+    throw new ApiError(
+      API_URL
+        ? "Cannot reach the server. It may be waking up (free hosting sleeps when idle): wait about a minute and try again."
+        : "Cannot reach the server. Is the backend running on port 8000?",
+      0
+    );
   }
 
   let data = null;

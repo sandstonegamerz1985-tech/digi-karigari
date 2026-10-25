@@ -93,15 +93,24 @@ def make_svg(title: str, c1: str, c2: str) -> str:
     )
 
 
-def run(reset: bool = False) -> None:
+def ensure_seed_images() -> None:
+    """Writes the placeholder pictures for the sample products if they are missing."""
     seed_dir = settings.UPLOAD_DIR / "seed"
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    for n, (_key, title, _desc, _cat, _price, _stock, _ship, (c1, c2)) in enumerate(PRODUCTS, start=1):
+        path = seed_dir / f"product-{n}.svg"
+        if not path.exists():
+            path.write_text(make_svg(title, c1, c2), encoding="utf-8")
+
+
+def run(reset: bool = False) -> None:
     products_dir = settings.UPLOAD_DIR / "products"
     if reset:
         Base.metadata.drop_all(engine)
         if products_dir.exists():
             shutil.rmtree(products_dir)
-    seed_dir.mkdir(parents=True, exist_ok=True)
     products_dir.mkdir(parents=True, exist_ok=True)
+    ensure_seed_images()
     Base.metadata.create_all(engine)
 
     with SessionLocal() as db:
@@ -125,8 +134,7 @@ def run(reset: bool = False) -> None:
 
         created: list[Product] = []
         for n, (key, title, desc, cat, price, stock, ship, (c1, c2)) in enumerate(PRODUCTS, start=1):
-            filename = f"seed/product-{n}.svg"
-            (settings.UPLOAD_DIR / filename).write_text(make_svg(title, c1, c2), encoding="utf-8")
+            filename = f"seed/product-{n}.svg"  # the picture file was written by ensure_seed_images()
             product = Product(
                 artisan_id=artisans[key].id, title=title, description=desc, category=cat,
                 price=price, stock=stock, shipping_fee=ship, ai_assisted=False,

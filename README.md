@@ -219,15 +219,70 @@ the frontend turns both into friendly text.
 - Not included (needed before real use): rate limiting, email verification, password reset, HTTPS, database migrations (Alembic), automated tests, image virus scanning, real legal policies.
 - Shipping is charged **once per product line**, not per unit. Prices are whole rupees.
 
-### Moving to PostgreSQL later
+### PostgreSQL
 
-Install a driver (`pip install "psycopg[binary]"`), create a database, and change one line in `.env`:
-`DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/digi_karigari`. Then run `python -m app.seed --reset`.
+The PostgreSQL driver is already in `requirements.txt` and Render uses it automatically. To try it on your own computer,
+create a database and change one line in `.env`:
+`DATABASE_URL=postgresql://user:password@localhost:5432/digi_karigari`. Then run `python -m app.seed --reset`.
 For real projects add Alembic migrations instead of `create_all`.
 
 ---
 
-## 9. Troubleshooting
+## 9. Deploying: frontend on Vercel, backend on Render
+
+Do the **backend first**, because the frontend needs its address.
+
+### Before you start
+1. Put the whole `digi-karigari` folder in a GitHub repository (the `.gitignore` already keeps secrets and databases out).
+   Check that `backend/.env` is **not** committed.
+2. Make free accounts on https://render.com and https://vercel.com and connect both to your GitHub.
+
+### Step 1: backend on Render
+1. Render dashboard > **New** > **Blueprint** > choose your repository. Render reads `render.yaml` and creates
+   the web service `digi-karigari-api` **and** a free Postgres database `digi-karigari-db`.
+2. Wait for the first deploy to finish (a few minutes). Open `https://<your-service>.onrender.com/api/health`;
+   it should show `{"status":"ok"}`. Your backend address is that `https://<your-service>.onrender.com`.
+3. The sample accounts and products are created automatically on first start (`AUTO_SEED=true`).
+   Demo password is still `demo1234`.
+
+### Step 2: frontend on Vercel
+1. Vercel > **Add New** > **Project** > import the same repository.
+2. Set **Root Directory** to `frontend`. (Framework preset: Vite. Build command `npm run build`, output `dist`; these are detected automatically.)
+3. Under **Environment Variables** add:
+   `VITE_API_URL` = `https://<your-service>.onrender.com` (no `/api`, no trailing slash).
+4. Deploy. You get an address like `https://digi-karigari.vercel.app`.
+
+### Step 3: tell the backend which website may call it (CORS)
+In the Render dashboard > your service > **Environment**, set
+`CORS_ORIGINS` = `https://digi-karigari.vercel.app` (your real Vercel address, no trailing slash; several can be comma-separated).
+Optional: also set `CORS_ORIGIN_REGEX` = `https://.*\.vercel\.app` so Vercel preview deployments work too.
+Render restarts the service automatically. Reload the Vercel site and it should show products.
+
+> `vercel.json` makes page links such as `/shop` and `/product/3` work after a refresh (single-page-app routing).
+> If you change `VITE_API_URL` later, **redeploy** the frontend: Vite bakes the value in at build time.
+
+### Free-plan limits you should know before the demo
+| Limit | What you will see | What to do |
+|---|---|---|
+| Render free web service **sleeps after ~15 min idle** | First load takes up to ~1 minute; the app may show "Cannot reach the server... waking up" | Open the site 2 minutes before presenting |
+| Render free **disk is temporary** | Photos uploaded by sellers **disappear** after a restart or redeploy. Sample images are re-created automatically, so the seeded shop still looks fine | For lasting photos use a paid Render plan with a persistent disk (set `UPLOAD_DIR=/var/data/uploads`), or move uploads to cloud storage such as Cloudinary or S3 (future work) |
+| Render **free Postgres expires** after about 30 days | The database is deleted unless you upgrade or recreate it | Recreate it before a later demo, or upgrade |
+| Data is in Postgres, not SQLite | Local SQLite data is **not** copied to Render | The seed script creates fresh sample data there |
+
+### Optional: turn on the real AI on Render
+Render dashboard > Environment: set `AI_PROVIDER` = `anthropic` and `ANTHROPIC_API_KEY` = your key, then save. The key lives
+only in Render, never in GitHub or in the frontend. Note that live AI calls may cost money on your own API account.
+
+### Quick deployment checklist
+- [ ] `https://<render>/api/health` shows ok
+- [ ] `https://<render>/docs` opens (API docs)
+- [ ] Vercel has `VITE_API_URL` set, and the site was redeployed after setting it
+- [ ] Render `CORS_ORIGINS` contains the exact Vercel address (`https://`, no trailing slash)
+- [ ] You can log in as `buyer@digikarigari-demo.com` / `demo1234`
+
+---
+
+## 10. Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -235,7 +290,12 @@ For real projects add Alembic migrations instead of `create_all`.
 | `Activate.ps1 cannot be loaded` | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, then activate again |
 | `py` is not recognised | Reinstall Python from python.org and tick "Add to PATH", or use `python` instead of `py` |
 | `ModuleNotFoundError: No module named 'app'` | Run commands from inside the `backend` folder |
-| `Address already in use` (port 8000 or 5173) | Close the old window, or use `--port 8001` and set `VITE_BACKEND_ORIGIN` / update `vite.config.js` |
+| `Address already in use` (port 8000 or 5173) | Close the old window, or run the backend with `--port 8001` and update the two proxy lines in `frontend/vite.config.js` |
+| Deployed site shows products but login/shop fails with a CORS error in the browser console | Render `CORS_ORIGINS` does not exactly match your Vercel address. Fix it in the Render dashboard |
+| Deployed site says "Cannot reach the server" | Render free plan is probably waking up; wait a minute. Also check `VITE_API_URL` on Vercel and that you redeployed after setting it |
+| Images missing on the deployed site | Photos uploaded by sellers vanish on Render's free plan after a restart (see section 9). Check `VITE_API_URL` too, since images load from the backend address |
+| Refreshing a page on Vercel gives 404 | `frontend/vercel.json` is missing or Root Directory is not `frontend` |
+| Render build fails on `psycopg` | Make sure `PYTHON_VERSION` is set (render.yaml sets it) and `requirements.txt` includes `psycopg[binary]` |
 | Login says incorrect email or password | Run `python -m app.seed --reset`; demo password is `demo1234` |
 | Images do not show | Make sure the backend is running; seed images are created by the seed script |
 | Language popup does not appear again | It is remembered. Clear site data for localhost, or use the language button in the menu |
