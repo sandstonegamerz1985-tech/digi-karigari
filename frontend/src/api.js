@@ -74,15 +74,28 @@ async function request(path, { method = "GET", json, form, params } = {}) {
   }
 
   let data = null;
+  let notJson = false;
   const text = await res.text();
   if (text) {
     try {
       data = JSON.parse(text);
     } catch {
-      data = null;
+      notJson = true; // for example an HTML page instead of data
     }
   }
-  if (!res.ok) throw new ApiError(formatDetail(data && data.detail), res.status);
+  if (!res.ok) {
+    throw new ApiError(notJson ? "The server returned an unexpected error. Please try again." : formatDetail(data && data.detail), res.status);
+  }
+  if (notJson) {
+    // The request "succeeded" but the answer is not data. On a deployed site this almost always means
+    // VITE_API_URL is missing, so the browser asked the website itself instead of the backend.
+    throw new ApiError(
+      API_URL
+        ? "The backend sent an unexpected reply. Check that VITE_API_URL is your Render backend address."
+        : "Could not find the backend. If this is the deployed site, set VITE_API_URL on Vercel to your Render address and redeploy.",
+      res.status
+    );
+  }
   return data;
 }
 
