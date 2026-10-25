@@ -26,6 +26,9 @@ services:
       # https://digi-karigari.vercel.app  (no trailing slash). You can edit it in the Render dashboard.
       - key: CORS_ORIGINS
         value: http://localhost:5173
+      # Lets any *.vercel.app address (including preview URLs) call the API.
+      - key: CORS_ORIGIN_REGEX
+        value: https://.*\.vercel\.app
       - key: AI_PROVIDER
         value: mock
       # To use the real AI later: set AI_PROVIDER=anthropic and add ANTHROPIC_API_KEY in the dashboard.

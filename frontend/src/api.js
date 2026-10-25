@@ -3,7 +3,9 @@
 
 // VITE_API_URL is empty on your own computer (the Vite proxy handles /api and /uploads).
 // On Vercel it is the address of the Render backend, e.g. https://digi-karigari-api.onrender.com
-const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+// Deployed (production) builds fall back to the Render backend below if VITE_API_URL is not set.
+const DEPLOYED_BACKEND = "https://digi-karigari.onrender.com";
+const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? DEPLOYED_BACKEND : "")).replace(/\/+$/, "");
 const BASE = API_URL + "/api";
 const ORIGIN = API_URL; // product photos are served by the backend, so they need the same prefix
 const TOKEN_KEY = "dk_token";

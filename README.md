@@ -252,6 +252,9 @@ Do the **backend first**, because the frontend needs its address.
    `VITE_API_URL` = `https://<your-service>.onrender.com` (no `/api`, no trailing slash).
 4. Deploy. You get an address like `https://digi-karigari.vercel.app`.
 
+> The frontend already defaults to `https://digi-karigari.onrender.com` in deployed builds (`frontend/src/api.js`).
+> If your Render service has a different address, change `DEPLOYED_BACKEND` there or set `VITE_API_URL` on Vercel.
+
 ### Step 3: tell the backend which website may call it (CORS)
 In the Render dashboard > your service > **Environment**, set
 `CORS_ORIGINS` = `https://digi-karigari.vercel.app` (your real Vercel address, no trailing slash; several can be comma-separated).
@@ -292,6 +295,7 @@ only in Render, never in GitHub or in the frontend. Note that live AI calls may 
 | `ModuleNotFoundError: No module named 'app'` | Run commands from inside the `backend` folder |
 | `Address already in use` (port 8000 or 5173) | Close the old window, or run the backend with `--port 8001` and update the two proxy lines in `frontend/vite.config.js` |
 | Deployed site shows products but login/shop fails with a CORS error in the browser console | Render `CORS_ORIGINS` does not exactly match your Vercel address. Fix it in the Render dashboard |
+| Deployed site on Vercel shows a blank cream screen, or says "Could not find the backend" | `VITE_API_URL` is missing on Vercel, or you did not **redeploy** after adding it (Vite bakes it in at build time). Set it to your Render address (no `/api`, no trailing slash), then Deployments > Redeploy |
 | Deployed site says "Cannot reach the server" | Render free plan is probably waking up; wait a minute. Also check `VITE_API_URL` on Vercel and that you redeployed after setting it |
 | Images missing on the deployed site | Photos uploaded by sellers vanish on Render's free plan after a restart (see section 9). Check `VITE_API_URL` too, since images load from the backend address |
 | Refreshing a page on Vercel gives 404 | `frontend/vercel.json` is missing or Root Directory is not `frontend` |
