@@ -23,9 +23,6 @@ export default function App() {
   return (
     <>
       <LanguagePrompt />
-      <div className="test-banner">
-        Demo project for a college presentation. Payments are simulated: no real money is ever charged.
-      </div>
       <Navbar />
       <main>
         <Routes>
