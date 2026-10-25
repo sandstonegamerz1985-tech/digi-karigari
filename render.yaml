@@ -31,9 +31,13 @@ services:
         value: https://.*\.vercel\.app
       - key: AI_PROVIDER
         value: mock
-      # To use the real AI later: set AI_PROVIDER=anthropic and add ANTHROPIC_API_KEY in the dashboard.
-      - key: ANTHROPIC_API_KEY
+      # To use the real AI: set AI_PROVIDER=gemini and add GEMINI_API_KEY in the dashboard.
+      - key: GEMINI_API_KEY
         sync: false # you type this in the Render dashboard; it is never stored in git
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: ANTHROPIC_API_KEY
+        sync: false # only needed if you choose AI_PROVIDER=anthropic
 
 databases:
   - name: digi-karigari-db

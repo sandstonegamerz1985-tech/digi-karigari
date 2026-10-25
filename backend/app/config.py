@@ -49,9 +49,12 @@ class Settings:
     # When true, the sample data is created automatically on startup if the database is empty.
     AUTO_SEED: bool = _flag("AUTO_SEED", False)
 
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock").lower()
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    AI_MODEL: str = os.getenv("AI_MODEL", "claude-sonnet-5-5")
+    # mock (demo, no key) | gemini | anthropic
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "mock").strip().lower()
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "").strip()
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    AI_MODEL: str = os.getenv("AI_MODEL", "claude-sonnet-5-5").strip()  # model used when AI_PROVIDER=anthropic
 
 
 settings = Settings()

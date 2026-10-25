@@ -119,15 +119,17 @@ Flow: artisan uploads a photo and types notes > `POST /api/ai/listing-assist` > 
 Nothing is published automatically.
 
 - **Demo mode (default):** `AI_PROVIDER=mock`. Uses simple keyword rules on your notes. It **does not analyse the photo**, and the app says so on screen.
-- **Live mode:** in `backend/.env` set
+- **Live mode with Google Gemini (recommended):** in `backend/.env` set
 
   ```
-  AI_PROVIDER=anthropic
-  ANTHROPIC_API_KEY=your-key-here
-  AI_MODEL=claude-sonnet-5-5
+  AI_PROVIDER=gemini
+  GEMINI_API_KEY=your-key-here
+  GEMINI_MODEL=gemini-2.5-flash
   ```
 
-  then restart the backend. The key stays on the backend; the frontend never sees it.
+  then restart the backend. Get a key at https://aistudio.google.com. If Google retires that model name, set `GEMINI_MODEL` to a current Gemini vision model.
+- **Live mode with Claude (alternative):** `AI_PROVIDER=anthropic`, `ANTHROPIC_API_KEY=...`, `AI_MODEL=claude-sonnet-5-5`.
+- In both cases the key stays on the backend; the frontend never sees it.
 - **Another provider later:** write one function in `backend/app/ai_service.py` that takes `(image_bytes, media_type, notes, filename)` and returns the same dictionary, then add it to `LIVE_PROVIDERS`. The frontend does not change.
 - AI output can be wrong. The artisan is responsible for the final text, which is why the review step exists.
 
@@ -273,8 +275,10 @@ Render restarts the service automatically. Reload the Vercel site and it should 
 | Data is in Postgres, not SQLite | Local SQLite data is **not** copied to Render | The seed script creates fresh sample data there |
 
 ### Optional: turn on the real AI on Render
-Render dashboard > Environment: set `AI_PROVIDER` = `anthropic` and `ANTHROPIC_API_KEY` = your key, then save. The key lives
-only in Render, never in GitHub or in the frontend. Note that live AI calls may cost money on your own API account.
+Render dashboard > your service > Environment, add these as **service** variables (not only in an Environment Group, unless the group is linked to the service):
+`AI_PROVIDER` = `gemini` and `GEMINI_API_KEY` = your key (optionally `GEMINI_MODEL`), then save. The key lives
+only in Render, never in GitHub or in the frontend. Live AI calls may be billed or rate-limited on your own Google account.
+Check it worked: open the Add listing form as an approved artisan; the AI box should say "AI is connected (Google Gemini)" instead of "DEMO MODE".
 
 ### Quick deployment checklist
 - [ ] `https://<render>/api/health` shows ok
@@ -304,7 +308,7 @@ only in Render, never in GitHub or in the frontend. Note that live AI calls may 
 | Login says incorrect email or password | Run `python -m app.seed --reset`; demo password is `demo1234` |
 | Images do not show | Make sure the backend is running; seed images are created by the seed script |
 | Language popup does not appear again | It is remembered. Clear site data for localhost, or use the language button in the menu |
-| AI says "DEMO MODE" | Expected until `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` are set in `backend/.env` (restart the backend after editing) |
+| AI says "DEMO MODE" | Expected until `AI_PROVIDER=gemini` and `GEMINI_API_KEY` are set (in `backend/.env` locally, or as service variables on Render). Restart after editing. The key variable must be named exactly `GEMINI_API_KEY` |
 | AI error 502 | Check the key and model name; you can always fill the form by hand |
 | `npm install` fails | Check internet, Node 18+, and try deleting `node_modules` and running again |
 | Want a clean start | Stop the backend, delete `backend/digi_karigari.db`, run `python -m app.seed --reset` |
