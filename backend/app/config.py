@@ -15,6 +15,26 @@ def _split(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _clean_origin(value: str) -> str:
+    """Forgives common typing slips: spaces, quotes and a trailing slash (https://x.vercel.app/)."""
+    return value.strip().strip("\"'").strip().rstrip("/")
+
+
+def _cors_origins() -> list[str]:
+    # Also accepts the singular name CORS_ORIGIN, since that is an easy typo to make.
+    raw = os.getenv("CORS_ORIGINS") or os.getenv("CORS_ORIGIN") or "http://localhost:5173,http://127.0.0.1:5173"
+    return [o for o in (_clean_origin(x) for x in _split(raw)) if o]
+
+
+def _cors_regex() -> str:
+    value = os.getenv("CORS_ORIGIN_REGEX", "").strip().strip("\"'").strip()
+    if not value and os.getenv("APP_ENV", "development") == "production":
+        # Deployed default: allow any *.vercel.app site (there are no cookies, only a token the page
+        # itself holds, so this is safe for a demo). Set CORS_ORIGIN_REGEX to something else to change it.
+        return r"https://.*\.vercel\.app"
+    return value
+
+
 def _flag(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
@@ -37,11 +57,10 @@ class Settings:
     DATABASE_URL: str = _database_url()
 
     # Which websites may call the API from a browser (your Vercel address goes here).
-    CORS_ORIGINS: list[str] = _split(
-        os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
-    )
-    # Optional pattern, e.g. https://.*\.vercel\.app  (lets Vercel preview URLs work too)
-    CORS_ORIGIN_REGEX: str = os.getenv("CORS_ORIGIN_REGEX", "")
+    CORS_ORIGINS: list[str] = _cors_origins()
+    # Optional pattern, e.g. https://.*\.vercel\.app  (lets Vercel preview URLs work too).
+    # In production it defaults to allowing any *.vercel.app address.
+    CORS_ORIGIN_REGEX: str = _cors_regex()
 
     UPLOAD_DIR: Path = (BASE_DIR / os.getenv("UPLOAD_DIR", "uploads")).resolve()
     MAX_UPLOAD_MB: int = int(os.getenv("MAX_UPLOAD_MB", "5"))
