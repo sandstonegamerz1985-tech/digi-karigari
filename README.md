@@ -29,7 +29,7 @@ payments are simulated, sample data is fictional, and nothing here is production
 | Admin basic counts | **Demo-only** | A few totals only |
 | Terms / privacy / shipping / refund pages | **Demo-only** | Placeholder text, not legal advice |
 | Semantic search, smart recommendations | Planned | |
-| AI photo-quality / category-match advisory checks | Planned | Advice only; admin decides |
+| AI photo-quality advisory | **Implemented (Gemini live mode)** | Guidance only; artisan reviews the photo. Category is suggested separately; automated category-match checking is still planned |
 | Buyer-artisan messaging, notifications | Planned | |
 | Reviews, disputes, refunds, seller trust tiers | Planned | |
 | Full admin dashboard and analytics | Planned | |
