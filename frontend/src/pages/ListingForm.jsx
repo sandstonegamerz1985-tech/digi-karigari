@@ -230,6 +230,11 @@ export default function ListingForm() {
               <p>
                 <strong>Looks like:</strong> {s.product_type || "-"} · <strong>Category:</strong> {s.category}
               </p>
+              {s.photo_advice && (
+                <p className="small">
+                  <strong>{t("listing.aiPhotoAdvice")}:</strong> {s.photo_advice}
+                </p>
+              )}
               <p>
                 <strong>{t("listing.title")}:</strong> {s.title}
               </p>
