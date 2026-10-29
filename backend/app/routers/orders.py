@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..constants import ITEM_STATUS_FLOW
@@ -56,6 +56,23 @@ def create_order(data: OrderIn, user: User = Depends(require_roles("buyer")), db
             detail="Test payment declined (simulated). No money was charged and nothing was ordered.",
         )
 
+    # Reserve every line with a conditional database update. The earlier stock check
+    # gives a friendly error in the usual case; this atomic guard prevents two concurrent
+    # checkouts from both consuming the same remaining units.
+    for pid, qty in wanted.items():
+        result = db.execute(
+            update(Product)
+            .where(Product.id == pid, Product.stock >= qty)
+            .values(stock=Product.stock - qty)
+            .execution_options(synchronize_session=False)
+        )
+        if result.rowcount != 1:
+            db.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="Stock changed during checkout. Please review your cart and try again.",
+            )
+
     order = Order(
         buyer_id=user.id,
         shipping_name=data.shipping_name.strip(),
@@ -80,7 +97,6 @@ def create_order(data: OrderIn, user: User = Depends(require_roles("buyer")), db
                 status="placed",
             )
         )
-        product.stock -= qty
     db.add(order)
     db.commit()
     db.refresh(order)
