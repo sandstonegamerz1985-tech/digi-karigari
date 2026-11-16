@@ -8,6 +8,7 @@ All artisans and products below are made up for the demo. The product pictures a
 placeholder images (SVG), not real photos.
 """
 import html
+import secrets
 import shutil
 import sys
 import textwrap
@@ -114,23 +115,39 @@ def run(reset: bool = False) -> None:
     Base.metadata.create_all(engine)
 
     with SessionLocal() as db:
-        if db.query(User).first():
-            print("Database already has data. Use `python -m app.seed --reset` to start fresh.")
+        # AUTO_SEED can also fill a missing catalog after users already exist.
+        # Existing users, orders, and products are never reset or overwritten.
+        if db.query(Product).first():
+            print("Catalog already has products. No demo data added.")
             return
 
-        pw = hash_password(DEMO_PASSWORD)
-        db.add_all([
-            User(name="Admin Asha", email="admin@digikarigari-demo.com", password_hash=pw, role="admin"),
-            User(name="Buyer Bhavna", email="buyer@digikarigari-demo.com", password_hash=pw, role="buyer"),
-        ])
+        had_existing_users = db.query(User).first() is not None
+        demo_password_hash = hash_password(DEMO_PASSWORD) if not had_existing_users else None
+        if not had_existing_users:
+            db.add_all([
+                User(name="Admin Asha", email="admin@digikarigari-demo.com",
+                     password_hash=demo_password_hash, role="admin"),
+                User(name="Buyer Bhavna", email="buyer@digikarigari-demo.com",
+                     password_hash=demo_password_hash, role="buyer"),
+            ])
 
         artisans: dict[str, User] = {}
         for key, name, email, craft, city, state, status, bio in ARTISANS:
-            user = User(name=name, email=email, password_hash=pw, role="artisan")
-            user.artisan_profile = ArtisanProfile(craft=craft, city=city, state=state, bio=bio, status=status)
-            db.add(user)
+            user = db.query(User).filter_by(email=email).first()
+            if user and user.role != "artisan":
+                raise RuntimeError(f"Demo artisan email is already used by a non-artisan account: {email}")
+            if user is None:
+                # Existing databases get catalog-only accounts with unguessable passwords.
+                password_hash = demo_password_hash or hash_password(secrets.token_urlsafe(32))
+                user = User(name=name, email=email, password_hash=password_hash, role="artisan")
+                db.add(user)
+            if user.artisan_profile is None:
+                user.artisan_profile = ArtisanProfile(
+                    craft=craft, city=city, state=state, bio=bio, status=status
+                )
             artisans[key] = user
         db.flush()
+        buyer = db.query(User).filter_by(email="buyer@digikarigari-demo.com", role="buyer").first()
 
         created: list[Product] = []
         for n, (key, title, desc, cat, price, stock, ship, (c1, c2)) in enumerate(PRODUCTS, start=1):
@@ -144,27 +161,32 @@ def run(reset: bool = False) -> None:
             created.append(product)
         db.flush()
 
-        # One sample order so "Order history" is not empty on first login.
-        buyer = db.query(User).filter_by(email="buyer@digikarigari-demo.com").one()
+        # Add the sample order only for the demo buyer and only once.
         painting = created[0]
-        order = Order(
-            buyer_id=buyer.id, shipping_name="Bhavna Sharma", shipping_address="12 Lake Road, Sector 4",
-            city="Delhi", pincode="110001", phone="9876543210", payment_status="paid_test",
-        )
-        order.items.append(OrderItem(
-            product_id=painting.id, artisan_id=painting.artisan_id, title=painting.title, price=painting.price,
-            shipping_fee=painting.shipping_fee, quantity=1, image="seed/product-1.svg", status="shipped",
-            courier_name="India Post (demo)", tracking_id="DEMO123456789",
-        ))
-        painting.stock -= 1
-        db.add(order)
+        if buyer is not None and not db.query(Order).filter_by(buyer_id=buyer.id).first():
+            order = Order(
+                buyer_id=buyer.id, shipping_name="Bhavna Sharma", shipping_address="12 Lake Road, Sector 4",
+                city="Delhi", pincode="110001", phone="9876543210", payment_status="paid_test",
+            )
+            order.items.append(OrderItem(
+                product_id=painting.id, artisan_id=painting.artisan_id, title=painting.title,
+                price=painting.price, shipping_fee=painting.shipping_fee, quantity=1,
+                image="seed/product-1.svg", status="shipped", courier_name="India Post (demo)",
+                tracking_id="DEMO123456789",
+            ))
+            painting.stock -= 1
+            db.add(order)
         db.commit()
 
-    print("Seeded demo data. Demo password for every account:", DEMO_PASSWORD)
-    print("  admin@digikarigari-demo.com   (admin)")
-    print("  buyer@digikarigari-demo.com   (buyer)")
-    print("  meera@ / ramesh@ / fatima@digikarigari-demo.com   (approved artisans)")
-    print("  sanjay@digikarigari-demo.com  (artisan, PENDING approval)")
+    print("Seeded the fictional demo catalog with placeholder images.")
+    if not had_existing_users:
+        print("Demo password for the demo accounts:", DEMO_PASSWORD)
+        print("  admin@digikarigari-demo.com   (admin)")
+        print("  buyer@digikarigari-demo.com   (buyer)")
+        print("  meera@ / ramesh@ / fatima@digikarigari-demo.com   (approved artisans)")
+        print("  sanjay@digikarigari-demo.com  (artisan, PENDING approval)")
+    else:
+        print("Existing users and orders were preserved. No demo admin or buyer account was created.")
 
 
 if __name__ == "__main__":
