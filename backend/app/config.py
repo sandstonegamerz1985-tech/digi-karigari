@@ -61,7 +61,7 @@ class Settings:
     UPLOAD_DIR: Path = (BASE_DIR / os.getenv("UPLOAD_DIR", "uploads")).resolve()
     MAX_UPLOAD_MB: int = int(os.getenv("MAX_UPLOAD_MB", "5"))
 
-    # When true, the sample data is created automatically on startup if the database is empty.
+    # When true, missing fictional sample listings are added automatically on startup.
     AUTO_SEED: bool = _flag("AUTO_SEED", False)
 
     # mock (demo, no key) | gemini | anthropic
