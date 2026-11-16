@@ -40,6 +40,8 @@ ARTISANS = [
      "Anita cuts and hand-stitches durable leather accessories in small batches."),
     ("bimal", "Bimal Das", "bimal@digikarigari-demo.com", "Bamboo and cane weaving", "Guwahati", "Assam", "approved",
      "Bimal weaves bamboo and cane homewares by hand using locally sourced materials."),
+    ("vikram", "Vikram Singh", "vikram@digikarigari-demo.com", "Wood carving", "Saharanpur", "Uttar Pradesh", "approved",
+     "Vikram hand-carves small homewares from responsibly sourced sheesham wood."),
 ]
 
 # artisan key, title, description, category, price, stock, shipping, colours
@@ -96,6 +98,10 @@ PRODUCTS = [
      "A small, lightweight storage basket woven by hand from bamboo strips. "
      "Suitable for dry household storage; each basket has a slightly different weave.",
      "Bamboo & Cane", 850, 9, 70, ("#65a30d", "#365314")),
+    ("vikram", "Hand-carved Sheesham Serving Tray",
+     "A serving tray carved and sanded by hand from sheesham wood, with raised edges and a natural oil finish. "
+     "Wipe clean with a dry cloth.",
+     "Woodwork", 1350, 6, 80, ("#a16207", "#713f12")),
 ]
 
 
