@@ -6,7 +6,7 @@ import { EmptyState, ErrorBox, Loading, Notice } from "../components/States";
 import { useFetch } from "../hooks";
 import { useLang } from "../i18n";
 
-const EMPTY = { q: "", category: "", min_price: "", max_price: "", sort: "newest" };
+const EMPTY = { q: "", category: "", min_price: "", max_price: "", sort: "category" };
 
 export default function Catalog() {
   const { t } = useLang();
@@ -30,7 +30,7 @@ export default function Catalog() {
     setFormError("");
     const next = {};
     Object.entries(form).forEach(([k, v]) => {
-      if (v !== "" && !(k === "sort" && v === "newest")) next[k] = v;
+      if (v !== "" && !(k === "sort" && v === "category")) next[k] = v;
     });
     setParams(next);
   };
@@ -71,6 +71,7 @@ export default function Catalog() {
         <label>
           {t("shop.sort")}
           <select value={form.sort} onChange={set("sort")}>
+            <option value="category">{t("shop.sortCategory")}</option>
             <option value="newest">{t("shop.sortNewest")}</option>
             <option value="price_asc">{t("shop.sortPriceLow")}</option>
             <option value="price_desc">{t("shop.sortPriceHigh")}</option>
