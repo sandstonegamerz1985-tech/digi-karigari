@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     # restart, so we quietly re-create any that are missing.
     seed.ensure_seed_images()
     if settings.AUTO_SEED:
-        seed.run()  # does nothing if the database already has data
+        seed.run()  # adds missing sample listings without resetting existing records
     yield
 
 
