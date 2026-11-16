@@ -8,6 +8,7 @@ import { useLang } from "../i18n";
 
 export default function Home() {
   const { t } = useLang();
+  const categories = useFetch(() => api.categories(), []);
   const products = useFetch(() => api.products({ limit: 4 }), []);
   const artisans = useFetch(() => api.artisans(), []);
 
@@ -25,13 +26,31 @@ export default function Home() {
 
       <section className="container section">
         <div className="section-head">
+          <h2>{t("home.categories")}</h2>
+          <Link to="/shop">{t("home.viewAll")}</Link>
+        </div>
+        <div className="grid grid-3">
+          {(categories.data || []).map((category) => (
+            <Link
+              key={category}
+              to={`/shop?category=${encodeURIComponent(category)}`}
+              className="card card-body"
+            >
+              <h3>{category}</h3>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="container section">
+        <div className="section-head">
           <h2>{t("home.featured")}</h2>
           <Link to="/shop">{t("home.viewAll")}</Link>
         </div>
         {products.loading && <Loading />}
         <ErrorBox message={products.error} onRetry={products.reload} />
         {!products.loading && !products.error && products.data.length === 0 && (
-          <EmptyState title={t("shop.emptyTitle")} text="Run the seed script to add sample products." />
+          <EmptyState title={t("shop.emptyTitle")} text={t("home.noProducts")} />
         )}
         <div className="grid">{products.data && products.data.map((p) => <ProductCard key={p.id} product={p} />)}</div>
       </section>
