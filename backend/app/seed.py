@@ -1,7 +1,7 @@
 """Creates the tables and fills them with FICTIONAL sample data.
 
 Run from the backend folder:
-    python -m app.seed            # seeds only if the public catalog is empty
+    python -m app.seed            # adds missing fictional sample products
     python -m app.seed --reset    # wipes everything and seeds again
 
 All artisans and products below are made up for the demo. The product pictures are generated
@@ -32,6 +32,14 @@ ARTISANS = [
      "Fatima leads a small group of women who do fine chikankari hand embroidery on cotton and block-printed fabrics."),
     ("sanjay", "Sanjay Kumar", "sanjay@digikarigari-demo.com", "Wood carving", "Saharanpur", "Uttar Pradesh", "pending",
      "Sanjay carves small figures and boxes from sheesham wood. (Pending: log in as admin to approve him!)"),
+    ("kavya", "Kavya Shah", "kavya@digikarigari-demo.com", "Handmade jewellery", "Ahmedabad", "Gujarat", "approved",
+     "Kavya makes small-batch bead and brass jewellery by hand in her home studio."),
+    ("naseer", "Naseer Ali", "naseer@digikarigari-demo.com", "Metalcraft", "Moradabad", "Uttar Pradesh", "approved",
+     "Naseer hand-hammers and finishes brassware using techniques learned in his family workshop."),
+    ("anita", "Anita Devi", "anita@digikarigari-demo.com", "Leather craft", "Kanpur", "Uttar Pradesh", "approved",
+     "Anita cuts and hand-stitches durable leather accessories in small batches."),
+    ("bimal", "Bimal Das", "bimal@digikarigari-demo.com", "Bamboo and cane weaving", "Guwahati", "Assam", "approved",
+     "Bimal weaves bamboo and cane homewares by hand using locally sourced materials."),
 ]
 
 # artisan key, title, description, category, price, stock, shipping, colours
@@ -72,6 +80,22 @@ PRODUCTS = [
      "A small elephant carved by hand from sheesham wood with a smooth natural finish. "
      "About 12 cm tall. (This listing appears in the shop after the admin approves Sanjay.)",
      "Woodwork", 1100, 6, 60, ("#92400e", "#451a03")),
+    ("kavya", "Handmade Brass and Bead Earrings",
+     "Lightweight earrings assembled by hand with brass hooks and hand-finished glass beads. "
+     "Each pair has small variations because it is made one at a time.",
+     "Jewellery", 780, 10, 40, ("#be123c", "#701a75")),
+    ("naseer", "Hand-hammered Brass Table Diya",
+     "A small brass diya shaped and polished by hand in a family workshop. "
+     "Wipe dry after use; use on a heat-safe surface.",
+     "Metalcraft", 520, 15, 50, ("#b45309", "#78350f")),
+    ("anita", "Hand-stitched Leather Card Holder",
+     "A compact card holder cut and stitched by hand from vegetable-tanned leather. "
+     "Natural marks and color variation make each piece unique.",
+     "Leather", 690, 8, 45, ("#a16207", "#422006")),
+    ("bimal", "Woven Bamboo Storage Basket",
+     "A small, lightweight storage basket woven by hand from bamboo strips. "
+     "Suitable for dry household storage; each basket has a slightly different weave.",
+     "Bamboo & Cane", 850, 9, 70, ("#65a30d", "#365314")),
 ]
 
 
@@ -115,18 +139,8 @@ def run(reset: bool = False) -> None:
     Base.metadata.create_all(engine)
 
     with SessionLocal() as db:
-        # AUTO_SEED can also fill a missing catalog after users already exist.
-        # Existing users, orders, and products are never reset or overwritten.
-        visible_product = (
-            db.query(Product)
-            .join(ArtisanProfile, ArtisanProfile.user_id == Product.artisan_id)
-            .filter(ArtisanProfile.status == "approved")
-            .first()
-        )
-        if visible_product:
-            print("Public catalog already has products. No demo data added.")
-            return
-
+        # Add only missing fictional sample listings. This is safe to run on every startup:
+        # it never resets existing users, orders, or products.
         had_existing_users = db.query(User).first() is not None
         demo_password_hash = hash_password(DEMO_PASSWORD) if not had_existing_users else None
         if not had_existing_users:
@@ -137,13 +151,19 @@ def run(reset: bool = False) -> None:
                      password_hash=demo_password_hash, role="buyer"),
             ])
 
+        existing_titles = {title for (title,) in db.query(Product.title).all()}
+        missing_products = [item for item in PRODUCTS if item[1] not in existing_titles]
+        required_artisans = {item[0] for item in missing_products}
         artisans: dict[str, User] = {}
         for key, name, email, craft, city, state, status, bio in ARTISANS:
+            if key not in required_artisans:
+                continue
             user = db.query(User).filter_by(email=email).first()
             if user and user.role != "artisan":
                 raise RuntimeError(f"Demo artisan email is already used by a non-artisan account: {email}")
             if user is None:
-                # Existing databases get catalog-only accounts with unguessable passwords.
+                # On an existing database, keep these catalog-only accounts from becoming
+                # login-able with the publicly documented demo password.
                 password_hash = demo_password_hash or hash_password(secrets.token_urlsafe(32))
                 user = User(name=name, email=email, password_hash=password_hash, role="artisan")
                 db.add(user)
@@ -157,6 +177,8 @@ def run(reset: bool = False) -> None:
 
         created: list[Product] = []
         for n, (key, title, desc, cat, price, stock, ship, (c1, c2)) in enumerate(PRODUCTS, start=1):
+            if title in existing_titles:
+                continue
             filename = f"seed/product-{n}.svg"  # the picture file was written by ensure_seed_images()
             product = Product(
                 artisan_id=artisans[key].id, title=title, description=desc, category=cat,
@@ -167,9 +189,10 @@ def run(reset: bool = False) -> None:
             created.append(product)
         db.flush()
 
-        # Add the sample order only for the demo buyer and only once.
-        painting = created[0]
-        if buyer is not None and not db.query(Order).filter_by(buyer_id=buyer.id).first():
+        # Add a sample order only for a newly seeded sample product and demo buyer.
+        painting = next((p for p in created if p.title == PRODUCTS[0][1]), None)
+        if (painting is not None and buyer is not None
+                and not db.query(Order).filter_by(buyer_id=buyer.id).first()):
             order = Order(
                 buyer_id=buyer.id, shipping_name="Bhavna Sharma", shipping_address="12 Lake Road, Sector 4",
                 city="Delhi", pincode="110001", phone="9876543210", payment_status="paid_test",
@@ -184,7 +207,7 @@ def run(reset: bool = False) -> None:
             db.add(order)
         db.commit()
 
-    print("Seeded the fictional demo catalog with placeholder images.")
+    print(f"Added {len(created)} fictional handmade sample products with placeholder images.")
     if not had_existing_users:
         print("Demo password for the demo accounts:", DEMO_PASSWORD)
         print("  admin@digikarigari-demo.com   (admin)")
