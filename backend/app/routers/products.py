@@ -1,7 +1,7 @@
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from sqlalchemy import select, update
+from sqlalchemy import case, select, update
 from sqlalchemy.orm import Session
 
 from ..constants import CATEGORIES, MAX_IMAGES_PER_PRODUCT
@@ -39,7 +39,7 @@ def list_products(
     min_price: Optional[int] = Query(default=None, ge=0),
     max_price: Optional[int] = Query(default=None, ge=0),
     artisan_id: Optional[int] = None,
-    sort: Literal["newest", "price_asc", "price_desc"] = "newest",
+    sort: Literal["category", "newest", "price_asc", "price_desc"] = "category",
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -61,12 +61,21 @@ def list_products(
         stmt = stmt.where(Product.price <= max_price)
     if artisan_id is not None:
         stmt = stmt.where(Product.artisan_id == artisan_id)
-    order = {
-        "newest": Product.id.desc(),
-        "price_asc": Product.price.asc(),
-        "price_desc": Product.price.desc(),
-    }[sort]
-    rows = db.scalars(stmt.order_by(order).limit(limit).offset(offset)).all()
+    if sort == "category":
+        category_order = case(
+            {name: index for index, name in enumerate(CATEGORIES)},
+            value=Product.category,
+            else_=len(CATEGORIES),
+        )
+        stmt = stmt.order_by(category_order, Product.id.desc())
+    else:
+        order = {
+            "newest": Product.id.desc(),
+            "price_asc": Product.price.asc(),
+            "price_desc": Product.price.desc(),
+        }[sort]
+        stmt = stmt.order_by(order)
+    rows = db.scalars(stmt.limit(limit).offset(offset)).all()
     return [serialize_product(p) for p in rows]
 
 
