@@ -32,6 +32,8 @@ const DICT = {
     "home.featured": "Fresh from the workshop",
     "home.artisans": "Meet the makers",
     "home.viewAll": "View all",
+    "home.categories": "Shop by craft",
+    "home.noProducts": "The catalog is being stocked. Please check back soon.",
 
     "shop.title": "Shop",
     "shop.search": "Search",
@@ -181,6 +183,8 @@ const DICT = {
     "home.featured": "कार्यशाला से ताज़ा",
     "home.artisans": "कारीगरों से मिलें",
     "home.viewAll": "सभी देखें",
+    "home.categories": "शिल्प के अनुसार खरीदें",
+    "home.noProducts": "दुकान में सामान जोड़ा जा रहा है। कृपया फिर से देखें।",
 
     "shop.title": "दुकान",
     "shop.search": "खोजें",
