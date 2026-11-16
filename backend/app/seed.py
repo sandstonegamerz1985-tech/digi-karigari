@@ -1,7 +1,7 @@
 """Creates the tables and fills them with FICTIONAL sample data.
 
 Run from the backend folder:
-    python -m app.seed            # seeds only if the database is empty
+    python -m app.seed            # seeds only if the public catalog is empty
     python -m app.seed --reset    # wipes everything and seeds again
 
 All artisans and products below are made up for the demo. The product pictures are generated
@@ -117,8 +117,14 @@ def run(reset: bool = False) -> None:
     with SessionLocal() as db:
         # AUTO_SEED can also fill a missing catalog after users already exist.
         # Existing users, orders, and products are never reset or overwritten.
-        if db.query(Product).first():
-            print("Catalog already has products. No demo data added.")
+        visible_product = (
+            db.query(Product)
+            .join(ArtisanProfile, ArtisanProfile.user_id == Product.artisan_id)
+            .filter(ArtisanProfile.status == "approved")
+            .first()
+        )
+        if visible_product:
+            print("Public catalog already has products. No demo data added.")
             return
 
         had_existing_users = db.query(User).first() is not None
