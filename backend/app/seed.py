@@ -1,7 +1,7 @@
 """Creates the tables and fills them with FICTIONAL sample data.
 
 Run from the backend folder:
-    python -m app.seed            # seeds only if the public catalog is empty
+    python -m app.seed            # adds missing fictional sample products
     python -m app.seed --reset    # wipes everything and seeds again
 
 All artisans and products below are made up for the demo. The product pictures are generated
