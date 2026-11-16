@@ -244,8 +244,8 @@ Do the **backend first**, because the frontend needs its address.
    the web service `digi-karigari-api` **and** a free Postgres database `digi-karigari-db`.
 2. Wait for the first deploy to finish (a few minutes). Open `https://<your-service>.onrender.com/api/health`;
    it should show `{"status":"ok"}`. Your backend address is that `https://<your-service>.onrender.com`.
-3. The sample accounts and products are created automatically on first start (`AUTO_SEED=true`).
-   Demo password is still `demo1234`.
+3. With `AUTO_SEED=true`, startup creates the fictional sample catalog when no products exist. It preserves existing users and orders; on a database that already has users, newly created sample artisan accounts receive random passwords, and no demo admin or buyer account is added. Placeholder product images are labeled as samples.
+   On a brand-new database, the usual demo accounts use password `demo1234`.
 
 ### Step 2: frontend on Vercel
 1. Vercel > **Add New** > **Project** > import the same repository.
