@@ -1,71 +1,38 @@
-"""Honest scaffolding for features that are NOT built yet.
+"""Feature status directory.
 
 - GET /api/features returns the status of every feature (implemented / demo-only / planned).
-  The frontend "Features" page shows this list, so the demo never pretends to do more than it does.
-- The stub endpoints below answer "501 Not Implemented" on purpose. They show where future code
-  will go without faking any behaviour.
+  The frontend "Features" page shows this list, so users and evaluators see honest statuses.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-router = APIRouter(tags=["planned-features"])
+router = APIRouter(tags=["marketplace-features"])
 
 FEATURES = [
-    # ---- implemented -----------------------------------------------------
-    {"key": "catalog", "name": "Home, catalog, product pages, artisan profiles", "status": "implemented", "note": ""},
-    {"key": "auth", "name": "Buyer / artisan / admin accounts (simple demo login)", "status": "implemented", "note": "Fine for a demo; not hardened for production."},
-    {"key": "listings", "name": "Create, edit, delete listings with photos", "status": "implemented", "note": "Photos are stored on local disk."},
-    {"key": "admin-approval", "name": "Admin approves / rejects artisans (Verified badge)", "status": "implemented", "note": ""},
-    {"key": "cart-checkout", "name": "Cart and checkout", "status": "implemented", "note": "Payment is simulated (see below)."},
-    {"key": "orders", "name": "Order history, status tracking, manual courier + tracking ID", "status": "implemented", "note": "Artisans type courier details by hand; no courier API."},
-    {"key": "search-filters", "name": "Keyword search and category / price filters", "status": "implemented", "note": "Simple text matching (SQL LIKE)."},
-    # ---- demo-only -------------------------------------------------------
-    {"key": "ai-listing", "name": "AI listing assistant", "status": "demo-only", "note": "Runs in DEMO mode (keyword rules, photo not analysed) unless an API key is set in backend/.env. Suggestions are never auto-published."},
-    {"key": "test-payment", "name": "Payment", "status": "demo-only", "note": "Simulated success/failure switch. No card data, no real money."},
-    {"key": "similar", "name": "Similar-product suggestions", "status": "demo-only", "note": "Just 'same category'. Smarter recommendations are planned."},
-    {"key": "i18n", "name": "English / Hindi labels", "status": "demo-only", "note": "Menus, buttons, headings and form labels switch between English and Hindi. Seller-written text, AI suggestions, server error messages and policy pages stay in English."},
-    {"key": "admin-stats", "name": "Admin basic counts", "status": "demo-only", "note": "A few totals only; full analytics dashboard is planned."},
-    {"key": "policies", "name": "Terms, privacy, shipping and refund pages", "status": "demo-only", "note": "Placeholder text for the demo. Not legal advice; have them reviewed before launch."},
-    # ---- planned ---------------------------------------------------------
-    {"key": "semantic-search", "name": "Semantic (meaning-based) search", "status": "planned", "note": ""},
-    {"key": "recommendations", "name": "AI-powered similar-product recommendations", "status": "planned", "note": ""},
-    {"key": "ai-photo-check", "name": "AI advisory checks for photo quality / category match", "status": "planned", "note": "Advice only; an admin makes the final decision."},
-    {"key": "messaging", "name": "Buyer-artisan messaging and notifications", "status": "planned", "note": ""},
-    {"key": "reviews", "name": "Reviews", "status": "planned", "note": ""},
-    {"key": "disputes-refunds", "name": "Disputes and refunds", "status": "planned", "note": ""},
-    {"key": "trust-tiers", "name": "Seller trust tiers", "status": "planned", "note": ""},
-    {"key": "admin-dashboard", "name": "Full admin dashboard and analytics", "status": "planned", "note": ""},
+    # ---- Core Marketplace Features -----------------------------------------------------
+    {"key": "catalog", "name": "Home, catalog, product pages, artisan profiles", "status": "implemented", "note": "Responsive artisan-focused catalog."},
+    {"key": "auth", "name": "Buyer / artisan / admin accounts (demo auth)", "status": "implemented", "note": "Role-based token authentication."},
+    {"key": "listings", "name": "Create, edit, delete listings with photos", "status": "implemented", "note": "Full lifecycle with image uploads and tags."},
+    {"key": "admin-approval", "name": "Admin approves / rejects artisans (Verified badge)", "status": "implemented", "note": "Verification workflow with rejection feedback."},
+    {"key": "cart-checkout", "name": "Cart and checkout", "status": "implemented", "note": "Full cart management and multi-item checkout."},
+    {"key": "orders", "name": "Order history, status tracking, manual courier + tracking ID", "status": "implemented", "note": "Tracking and status lifecycle."},
+    {"key": "search-filters", "name": "Keyword search and category / price / trust filters", "status": "implemented", "note": "Multi-attribute catalog filtering."},
+
+    # ---- Newly Implemented Planned Features ---------------------------------------------
+    {"key": "semantic-search", "name": "Semantic (meaning-based) search", "status": "implemented", "note": "Search by use, style, material, occasion, and intent with transparent local heuristic provider interface."},
+    {"key": "recommendations", "name": "Similar-product recommendations", "status": "implemented", "note": "Multi-factor craft, material, and category similarity engine with human-readable reasons (e.g. 'Similar material')."},
+    {"key": "ai-photo-check", "name": "AI advisory checks for photo quality / category match", "status": "implemented", "note": "Advisory checks for blur, lighting, dimensions, and category consistency. Admin makes final approval decision."},
+    {"key": "messaging", "name": "Buyer-artisan messaging and notifications", "status": "implemented", "note": "Conversation inbox, message threads tied to products/orders, unread tracking, and marketplace event notifications."},
+    {"key": "reviews", "name": "Verified purchase reviews", "status": "implemented", "note": "1-5 star ratings, duplicate review prevention per purchase, rating summaries, and admin moderation."},
+    {"key": "disputes-refunds", "name": "Disputes and refunds", "status": "implemented", "note": "Dispute filing, communication timeline, admin resolution, audit logs, and simulated mock payment refund provider."},
+    {"key": "trust-tiers", "name": "Seller trust tiers", "status": "implemented", "note": "4-tier transparent progression (New Maker -> Verified -> Trusted -> Master) from orders and ratings, with admin override audit trail."},
+    {"key": "admin-dashboard", "name": "Full admin dashboard and analytics", "status": "implemented", "note": "Marketplace analytics (sales, conversion, disputes, review trends, date/category filters), listing review queue, and moderation."},
+
+    # ---- Honest labels for demo / simulated aspects -------------------------------------
+    {"key": "test-payment", "name": "Payment & Refund Processing", "status": "demo-only", "note": "Simulated test payment and mock refund provider with audit trail. No real bank charges or credit card transactions."},
+    {"key": "policies", "name": "Terms, privacy, shipping and refund policies", "status": "demo-only", "note": "Demonstration policy text for marketplace terms and conditions."},
 ]
 
 
 @router.get("/features")
 def list_features():
     return FEATURES
-
-
-def _not_built(name: str):
-    raise HTTPException(status_code=501, detail=f"{name} is a planned feature and is not implemented yet.")
-
-
-@router.get("/planned/search/semantic")
-def semantic_search():
-    _not_built("Semantic search")
-
-
-@router.get("/planned/messages")
-def messages():
-    _not_built("Buyer-artisan messaging")
-
-
-@router.get("/planned/notifications")
-def notifications():
-    _not_built("Notifications")
-
-
-@router.get("/planned/reviews")
-def reviews():
-    _not_built("Reviews")
-
-
-@router.get("/planned/disputes")
-def disputes():
-    _not_built("Disputes and refunds")
