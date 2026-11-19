@@ -261,7 +261,11 @@ def run(reset: bool = False) -> None:
         for n, (key, title, desc, cat, price, stock, ship, (c1, c2), mats, tags) in enumerate(PRODUCTS, start=1):
             if title in existing_titles:
                 continue
-            filename = f"seed/product-{n}.svg"
+            filename = (
+                "seed/product-29.jpg"
+                if title == "Kutchi Mirror-work Cushion Cover"
+                else f"seed/product-{n}.svg"
+            )
             advisory = {
                 "provider": "local_image_advisory_heuristic",
                 "is_ai_powered": False,
@@ -285,6 +289,15 @@ def run(reset: bool = False) -> None:
             db.add(product)
             created.append(product)
         db.flush()
+
+        # Switch an already-seeded prototype listing from its old vector placeholder
+        # to the bundled, attributed sample photo without duplicating the product.
+        demo_cushion = db.query(Product).filter_by(title="Kutchi Mirror-work Cushion Cover").first()
+        if demo_cushion:
+            if demo_cushion.images:
+                demo_cushion.images[0].filename = "seed/product-29.jpg"
+            else:
+                demo_cushion.images.append(ProductImage(filename="seed/product-29.jpg", position=0))
 
         # Seed sample orders with delivered items and verified reviews
         p_fish = db.query(Product).filter(Product.title.like("%Fish Painting%")).first()

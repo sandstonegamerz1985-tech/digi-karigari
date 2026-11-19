@@ -95,7 +95,7 @@ Password for every account: `demo1234` (the Login page has quick-fill buttons).
 | Artisan (approved, Verified) | meera@, ramesh@, fatima@ `digikarigari-demo.com` |
 | Artisan (**pending**) | sanjay@digikarigari-demo.com |
 
-All artisans and products are **fictional**. Product images are generated placeholders.
+All artisans and products are **fictional**. Most product images are simple placeholders; Nisha's Kutchi cushion cover uses a representative Wikimedia Commons photo. See `backend/uploads/seed/IMAGE_ATTRIBUTION.md` for its source and license.
 
 ### Suggested demo script (5 minutes)
 
