@@ -41,7 +41,9 @@ async def lifespan(app: FastAPI):
         settings.AI_PROVIDER,
     )
     seed.ensure_seed_images()
-    if settings.AUTO_SEED:
+    # Keep a production prototype from coming up with an empty catalog if the
+    # Render service was created without syncing AUTO_SEED from render.yaml.
+    if settings.AUTO_SEED or settings.APP_ENV == "production":
         seed.run()
     yield
 
