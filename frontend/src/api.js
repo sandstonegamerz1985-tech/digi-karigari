@@ -1,9 +1,5 @@
 // All communication with the backend lives in this file.
-// Every function here matches an endpoint listed in the README "API summary".
 
-// VITE_API_URL is empty on your own computer (the Vite proxy handles /api and /uploads).
-// On Vercel it is the address of the Render backend, e.g. https://digi-karigari-api.onrender.com
-// Deployed (production) builds fall back to the Render backend below if VITE_API_URL is not set.
 const DEPLOYED_BACKEND = "https://digi-karigari.onrender.com";
 const API_URL = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? DEPLOYED_BACKEND : "")).replace(/\/+$/, "");
 const BASE = API_URL + "/api";
@@ -24,7 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-// FastAPI sends "detail" as text, or as a list of validation problems. Turn both into one sentence.
+// FastAPI sends "detail" as text, or as a list of validation problems.
 function formatDetail(detail) {
   if (!detail) return "Something went wrong. Please try again.";
   if (typeof detail === "string") return detail;
@@ -69,7 +65,7 @@ async function request(path, { method = "GET", json, form, params } = {}) {
   } catch {
     throw new ApiError(
       API_URL
-        ? "Cannot reach the server. It may be waking up (free hosting sleeps when idle): wait about a minute and try again."
+        ? "Cannot reach the server. It may be waking up: wait about a minute and try again."
         : "Cannot reach the server. Is the backend running on port 8000?",
       0
     );
@@ -82,19 +78,17 @@ async function request(path, { method = "GET", json, form, params } = {}) {
     try {
       data = JSON.parse(text);
     } catch {
-      notJson = true; // for example an HTML page instead of data
+      notJson = true;
     }
   }
   if (!res.ok) {
     throw new ApiError(notJson ? "The server returned an unexpected error. Please try again." : formatDetail(data && data.detail), res.status);
   }
   if (notJson) {
-    // The request "succeeded" but the answer is not data. On a deployed site this almost always means
-    // VITE_API_URL is missing, so the browser asked the website itself instead of the backend.
     throw new ApiError(
       API_URL
         ? "The backend sent an unexpected reply. Check that VITE_API_URL is your Render backend address."
-        : "Could not find the backend. If this is the deployed site, set VITE_API_URL on Vercel to your Render address and redeploy.",
+        : "Could not find the backend. If this is the deployed site, set VITE_API_URL and redeploy.",
       res.status
     );
   }
@@ -119,25 +113,75 @@ export const api = {
   deleteImage: (productId, imageId) =>
     request(`/products/${productId}/images/${imageId}`, { method: "DELETE" }),
 
+  // semantic search
+  searchSemantic: (params) => request("/search/semantic", { params }),
+  searchSuggestions: () => request("/search/suggestions"),
+
+  // recommendations
+  similarRecommendations: (productId, limit = 4) =>
+    request(`/recommendations/similar/${productId}`, { params: { limit } }),
+  forYouRecommendations: (limit = 6) => request("/recommendations/for-you", { params: { limit } }),
+
   // artisans
   artisans: () => request("/artisans"),
   artisan: (id) => request(`/artisans/${id}`),
 
-  // AI listing assistant
+  // trust tiers
+  artisanTrustTier: (userId) => request(`/artisans/${userId}/trust-tier`),
+  adminTrustTiers: () => request("/admin/trust-tiers"),
+  adminOverrideTrustTier: (userId, payload) =>
+    request(`/admin/trust-tiers/${userId}/override`, { method: "POST", json: payload }),
+
+  // AI listing assistant & advisory checks
   aiStatus: () => request("/ai/status"),
   aiAssist: (formData) => request("/ai/listing-assist", { method: "POST", form: formData }),
+  aiAdvisoryCheck: (formData) => request("/ai/advisory-check", { method: "POST", form: formData }),
 
   // orders
   createOrder: (payload) => request("/orders", { method: "POST", json: payload }),
   orders: () => request("/orders"),
   updateItem: (itemId, payload) => request(`/orders/items/${itemId}`, { method: "PATCH", json: payload }),
 
+  // messaging & notifications
+  conversations: () => request("/conversations"),
+  startConversation: (payload) => request("/conversations", { method: "POST", json: payload }),
+  conversationThread: (id) => request(`/conversations/${id}`),
+  sendMessage: (convoId, text) =>
+    request(`/conversations/${convoId}/messages`, { method: "POST", json: { text } }),
+  notifications: () => request("/notifications"),
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: "POST" }),
+  markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
+
+  // reviews
+  eligibleReviews: () => request("/reviews/eligible"),
+  createReview: (payload) => request("/reviews", { method: "POST", json: payload }),
+  productReviews: (productId) => request(`/reviews/product/${productId}`),
+  artisanReviews: (artisanId) => request(`/reviews/artisan/${artisanId}`),
+
+  // disputes & refunds
+  disputes: (status) => request("/disputes", { params: { status } }),
+  openDispute: (payload) => request("/disputes", { method: "POST", json: payload }),
+  dispute: (id) => request(`/disputes/${id}`),
+  sendDisputeMessage: (id, message) =>
+    request(`/disputes/${id}/messages`, { method: "POST", json: { message } }),
+  adminResolveDispute: (id, payload) =>
+    request(`/admin/disputes/${id}/resolve`, { method: "POST", json: payload }),
+
   // admin
   adminStats: () => request("/admin/stats"),
+  adminAnalytics: (params) => request("/admin/analytics", { params }),
+  adminListings: (status = "all") => request("/admin/listings", { params: { status } }),
+  adminApproveListing: (id) => request(`/admin/listings/${id}/approve`, { method: "POST" }),
+  adminRejectListing: (id, reason) =>
+    request(`/admin/listings/${id}/reject`, { method: "POST", json: { reason } }),
   adminArtisans: (status) => request("/admin/artisans", { params: { status } }),
   approveArtisan: (id) => request(`/admin/artisans/${id}/approve`, { method: "POST" }),
   rejectArtisan: (id, reason) =>
     request(`/admin/artisans/${id}/reject`, { method: "POST", json: { reason } }),
+  adminUsers: (role = "all") => request("/admin/users", { params: { role } }),
+  adminReviews: (status = "all") => request("/admin/reviews", { params: { status } }),
+  adminModerateReview: (id, payload) =>
+    request(`/admin/reviews/${id}/moderate`, { method: "POST", json: payload }),
 
   // feature status list
   features: () => request("/features"),

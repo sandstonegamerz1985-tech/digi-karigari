@@ -12,6 +12,7 @@ import Features from "./pages/Features";
 import Home from "./pages/Home";
 import ListingForm from "./pages/ListingForm";
 import Login from "./pages/Login";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Orders from "./pages/Orders";
 import Policy from "./pages/Policy";
@@ -39,6 +40,7 @@ export default function App() {
 
           <Route path="/checkout" element={<ProtectedRoute roles={["buyer"]}><Checkout /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/seller" element={<ProtectedRoute roles={["artisan"]}><SellerDashboard /></ProtectedRoute>} />
           <Route path="/seller/new" element={<ProtectedRoute roles={["artisan"]}><ListingForm /></ProtectedRoute>} />
           <Route path="/seller/edit/:id" element={<ProtectedRoute roles={["artisan"]}><ListingForm /></ProtectedRoute>} />
@@ -53,7 +55,7 @@ export default function App() {
             <Link to="/policy/shipping">Shipping</Link> · <Link to="/policy/refunds">Refunds</Link> ·{" "}
             <Link to="/features">Feature status</Link>
           </p>
-          <p className="muted small">&copy; Digi Karigari</p>
+          <p className="muted small">&copy; Digi Karigari · Handcrafted Marketplace</p>
         </div>
       </footer>
     </>

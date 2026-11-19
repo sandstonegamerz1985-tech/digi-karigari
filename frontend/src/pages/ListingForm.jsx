@@ -18,27 +18,39 @@ export default function ListingForm() {
   const categories = useFetch(() => api.categories(), []);
   const aiStatus = useFetch(() => api.aiStatus(), []);
 
-  const [form, setForm] = useState({ title: "", description: "", category: "", price: "", stock: "", shipping_fee: "0" });
-  const [existing, setExisting] = useState([]); // photos already saved on the server
-  const [files, setFiles] = useState([]); // new photos chosen in this form
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    price: "",
+    stock: "",
+    shipping_fee: "0",
+    materials: "",
+    tags: "",
+  });
+  const [existing, setExisting] = useState([]);
+  const [files, setFiles] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(editing);
   const [loadError, setLoadError] = useState("");
 
   const [notes, setNotes] = useState("");
-  const [ai, setAi] = useState(null); // the AI result (suggestions only)
+  const [ai, setAi] = useState(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
   const [aiAssisted, setAiAssisted] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
+  // AI advisory photo quality and category checks
+  const [advisoryReport, setAdvisoryReport] = useState(null);
+  const [advisoryBusy, setAdvisoryBusy] = useState(false);
+  const [advisoryError, setAdvisoryError] = useState("");
+
   const [errors, setErrors] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  // Local previews of newly chosen photos
   const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
-  // When editing, load the existing listing
   useEffect(() => {
     if (!editing) return;
     api
@@ -51,9 +63,12 @@ export default function ListingForm() {
           price: String(p.price),
           stock: String(p.stock),
           shipping_fee: String(p.shipping_fee),
+          materials: p.materials || "",
+          tags: Array.isArray(p.tags) ? p.tags.join(", ") : (p.tags || ""),
         });
         setExisting(p.images);
         setAiAssisted(p.ai_assisted);
+        if (p.ai_advisory) setAdvisoryReport(p.ai_advisory);
       })
       .catch((e) => setLoadError(e.message))
       .finally(() => setLoadingProduct(false));
@@ -87,7 +102,7 @@ export default function ListingForm() {
     }
   };
 
-  // ---- AI assistant ---------------------------------------------------------
+  // AI listing text suggestions
   const askAi = async () => {
     setAiError("");
     if (files.length === 0) return setAiError("Add a photo first. The assistant analyses the first photo you chose in this form.");
@@ -96,7 +111,9 @@ export default function ListingForm() {
       const fd = new FormData();
       fd.append("image", files[0]);
       fd.append("notes", notes);
-      setAi(await api.aiAssist(fd));
+      const res = await api.aiAssist(fd);
+      setAi(res);
+      setAiAssisted(true);
     } catch (err) {
       setAiError(err.message);
     } finally {
@@ -105,92 +122,136 @@ export default function ListingForm() {
   };
 
   const applySuggestions = () => {
+    if (!ai?.suggestions) return;
     const s = ai.suggestions;
-    setForm({ ...form, title: s.title || form.title, description: s.description || form.description, category: s.category || form.category });
-    setAiAssisted(true);
-    setConfirmed(false);
+    setForm((prev) => ({
+      ...prev,
+      title: s.title || prev.title,
+      description: s.description || prev.description,
+      category: s.category || prev.category,
+      materials: s.materials?.join(", ") || prev.materials,
+      tags: s.tags?.join(", ") || prev.tags,
+    }));
   };
 
-  // ---- Validation + submit --------------------------------------------------
-  const validate = () => {
-    const list = [];
-    if (form.title.trim().length < 3 || form.title.length > 120) list.push("Title must be 3 to 120 characters.");
-    if (form.description.trim().length < 10 || form.description.length > 2000) list.push("Description must be 10 to 2000 characters.");
-    if (!form.category) list.push("Please choose a category.");
-    const price = Number(form.price);
-    const stock = Number(form.stock);
-    const ship = Number(form.shipping_fee);
-    if (!Number.isInteger(price) || price < 1 || price > 1000000) list.push("Price must be a whole number of rupees, at least 1.");
-    if (!Number.isInteger(stock) || stock < 0 || stock > 10000) list.push("Stock must be a whole number, 0 or more.");
-    if (!Number.isInteger(ship) || ship < 0 || ship > 5000) list.push("Shipping fee must be a whole number between 0 and 5000.");
-    if (existing.length + files.length === 0) list.push("Please add at least one photo.");
-    if (aiAssisted && !confirmed) list.push("Please tick the box to confirm you reviewed the AI-assisted text.");
-    return list;
+  // AI advisory image quality and category consistency check
+  const runAdvisoryCheck = async () => {
+    setAdvisoryError("");
+    if (!form.category) {
+      setAdvisoryError("Please select a category first so we can check category consistency.");
+      return;
+    }
+    if (!form.title) {
+      setAdvisoryError("Please enter a title for your craft piece.");
+      return;
+    }
+    setAdvisoryBusy(true);
+    try {
+      const fd = new FormData();
+      if (files.length > 0) {
+        fd.append("image", files[0]);
+      }
+      fd.append("category", form.category);
+      fd.append("title", form.title);
+      fd.append("description", form.description);
+      fd.append("notes", `${form.materials} ${form.tags} ${notes}`);
+      const rep = await api.aiAdvisoryCheck(fd);
+      setAdvisoryReport(rep);
+    } catch (err) {
+      setAdvisoryError(err.message || "Failed to run advisory check.");
+    } finally {
+      setAdvisoryBusy(false);
+    }
   };
 
   const submit = async (e) => {
     e.preventDefault();
-    const list = validate();
-    setErrors(list);
-    if (list.length) return;
+    setErrors([]);
+    const problems = [];
+    if (!form.title.trim() || form.title.length < 3) problems.push("Title must be at least 3 characters.");
+    if (!form.description.trim() || form.description.length < 10) problems.push("Description must be at least 10 characters.");
+    if (!form.category) problems.push("Please pick a category.");
+    const price = Number(form.price);
+    if (!Number.isFinite(price) || price < 1) problems.push("Price must be at least 1 rupee.");
+    const stock = Number(form.stock);
+    if (!Number.isFinite(stock) || stock < 0) problems.push("Stock cannot be negative.");
+    const ship = Number(form.shipping_fee || 0);
+    if (!Number.isFinite(ship) || ship < 0) problems.push("Shipping fee cannot be negative.");
+    if (existing.length + files.length === 0) problems.push("Add at least one photo of your craft.");
+    if (aiAssisted && !confirmed) problems.push("Please review and confirm that you verified the AI-generated suggestions.");
+
+    if (problems.length > 0) {
+      setErrors(problems);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setSaving(true);
     try {
       const fd = new FormData();
       fd.append("title", form.title.trim());
       fd.append("description", form.description.trim());
       fd.append("category", form.category);
-      fd.append("price", form.price);
-      fd.append("stock", form.stock);
-      fd.append("shipping_fee", form.shipping_fee || "0");
+      fd.append("price", String(price));
+      fd.append("stock", String(stock));
+      fd.append("shipping_fee", String(ship));
       fd.append("ai_assisted", String(aiAssisted));
-      files.forEach((f) => fd.append("images", f));
-      if (editing) await api.updateProduct(id, fd);
-      else await api.createProduct(fd);
+      fd.append("materials", form.materials.trim());
+      fd.append("tags", form.tags.trim());
+      for (const f of files) fd.append("images", f);
+
+      if (editing) {
+        await api.updateProduct(id, fd);
+      } else {
+        await api.createProduct(fd);
+      }
       navigate("/seller");
     } catch (err) {
       setErrors([err.message]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
   };
 
   if (loadingProduct) return <Loading />;
-  if (loadError)
-    return (
-      <div className="container section">
-        <ErrorBox message={loadError} />
-        <Link to="/seller">&larr; {t("seller.title")}</Link>
-      </div>
-    );
+  if (loadError) return <ErrorBox message={loadError} />;
 
   const s = ai?.suggestions;
 
   return (
     <div className="container narrow-lg section">
-      <Link to="/seller">&larr; {t("seller.title")}</Link>
-      <h1>{editing ? t("listing.editTitle") : t("listing.newTitle")}</h1>
+      <Link to="/seller">&larr; Back to Artisan Dashboard</Link>
+      <h1>{editing ? "Edit Listing" : "Create New Handmade Listing"}</h1>
 
       {errors.length > 0 && (
-        <div className="alert alert-error" role="alert">
+        <div className="alert alert-error">
           <ul>
-            {errors.map((m) => (
-              <li key={m}>{m}</li>
+            {errors.map((e) => (
+              <li key={e}>{e}</li>
             ))}
           </ul>
         </div>
       )}
 
-      <form className="form" onSubmit={submit}>
-        {/* Step 1: photos */}
+      <form onSubmit={submit} className="form" style={{ marginTop: "1rem" }}>
+        {/* Step 1: Photos */}
         <div className="card card-body form">
-          <label>
-            {t("listing.photos")}
-            <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={onFiles} />
-          </label>
+          <h3>1. Product Photographs ({existing.length + files.length} / {MAX_IMAGES})</h3>
+          <p className="small muted">
+            Upload clear photos taken in good natural light. Show different angles and close-ups of craftsmanship.
+          </p>
+          {existing.length + files.length < MAX_IMAGES && (
+            <label>
+              Add photos (JPG, PNG, WebP · up to 5 MB each)
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={onFiles} />
+            </label>
+          )}
+
           <div className="thumbs">
             {existing.map((img) => (
               <div key={img.id} className="thumb-wrap">
-                <img src={assetUrl(img.url)} alt="saved" />
+                <img src={assetUrl(img.url)} alt="" />
                 <button type="button" className="thumb-x" onClick={() => removeExisting(img)} aria-label="Remove photo">
                   ×
                 </button>
@@ -207,90 +268,151 @@ export default function ListingForm() {
           </div>
         </div>
 
-        {/* Step 2: AI assistant */}
+        {/* Step 2: AI Advisory Photo & Category Check */}
+        <div className="card card-body form advisory-report">
+          <div className="between">
+            <h3 style={{ margin: 0, color: "#9a3412" }}>
+              2. AI Quality & Category Advisory Check <FeatureTag status="implemented" />
+            </h3>
+            <button
+              type="button"
+              className="btn btn-outline btn-small"
+              onClick={runAdvisoryCheck}
+              disabled={advisoryBusy}
+            >
+              {advisoryBusy ? "Inspecting..." : "🔍 Run Quality Check"}
+            </button>
+          </div>
+          <p className="small muted" style={{ margin: "0.2rem 0 0.5rem" }}>
+            Automated check for photo blur, underexposure/lighting, resolution, and whether your chosen category matches your product details.
+          </p>
+
+          <Notice kind="info">
+            <strong>Advisory suggestions only:</strong> An admin makes the final decision on listing approval. A listing is NEVER automatically rejected or published based on AI advice.
+          </Notice>
+
+          {advisoryError && <ErrorBox message={advisoryError} />}
+
+          {advisoryReport && (
+            <div style={{ marginTop: "0.75rem", background: "#fff", padding: "1rem", borderRadius: "8px", border: "1px solid var(--border)" }}>
+              <div className="between" style={{ marginBottom: "0.5rem" }}>
+                <strong>Inspection Checklist:</strong>
+                <span className="small muted">Provider: {advisoryReport.provider}</span>
+              </div>
+
+              {advisoryReport.checks?.map((chk, i) => (
+                <div key={i} className="check-row">
+                  <span className={chk.status === "pass" ? "check-icon-pass" : "check-icon-advisory"}>
+                    {chk.status === "pass" ? "✓" : "⚠️"}
+                  </span>
+                  <div>
+                    <strong>{chk.name}:</strong> {chk.message}
+                    {chk.suggestion && <div className="small muted" style={{ marginTop: "0.15rem" }}>💡 {chk.suggestion}</div>}
+                  </div>
+                </div>
+              ))}
+
+              {advisoryReport.category_summary && !advisoryReport.category_summary.is_match && (
+                <div className="alert alert-warn small" style={{ marginTop: "0.75rem" }}>
+                  💡 <strong>Category Suggestion:</strong> The assistant thinks this might be "{advisoryReport.category_summary.suggested}". You can keep your chosen category or switch if you prefer.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Step 3: AI Listing Assistant (Optional Title/Description Helper) */}
         <div className="card card-body form ai-box">
           <h3>
-            {t("listing.aiHeading")} <FeatureTag status={aiStatus.data?.mode === "live" ? "implemented" : "demo-only"} />
+            3. AI Copywriting Assistant (Optional) <FeatureTag status={aiStatus.data?.mode === "live" ? "implemented" : "demo-only"} />
           </h3>
-          {aiStatus.data && <Notice kind={aiStatus.data.mode === "live" ? "info" : "warn"}>{aiStatus.data.label}</Notice>}
+          <p className="small muted">
+            Need help drafting your title and description? Enter rough artisan notes below and let the assistant write a warm, honest draft.
+          </p>
           <label>
-            {t("listing.aiNotes")}
-            <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} />
+            Artisan Notes (e.g. "made on potters wheel with terracotta clay, hand-painted cobalt flowers, glazed inside")
+            <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} />
           </label>
           <ErrorBox message={aiError} />
-          <button type="button" className="btn btn-outline" onClick={askAi} disabled={aiBusy}>
-            {aiBusy ? t("common.loading") : t("listing.aiButton")}
+          <button type="button" className="btn btn-outline btn-small" onClick={askAi} disabled={aiBusy} style={{ alignSelf: "flex-start" }}>
+            {aiBusy ? "Generating draft..." : "✨ Generate Description Draft"}
           </button>
 
           {s && (
-            <div className="suggestions">
-              <Notice kind={ai.mode === "live" ? "info" : "warn"}>
-                {ai.mode === "live" ? "AI-generated suggestions. Nothing is published until you save the listing." : "DEMO suggestions (the photo was not analysed). Nothing is published until you save the listing."}
-              </Notice>
+            <div className="suggestions" style={{ marginTop: "0.75rem" }}>
               <p>
-                <strong>Looks like:</strong> {s.product_type || "-"} · <strong>Category:</strong> {s.category}
+                <strong>Suggested Title:</strong> {s.title}
               </p>
-              {s.photo_advice && (
-                <p className="small">
-                  <strong>{t("listing.aiPhotoAdvice")}:</strong> {s.photo_advice}
-                </p>
-              )}
-              <p>
-                <strong>{t("listing.title")}:</strong> {s.title}
-              </p>
-              <p className="pre">{s.description}</p>
-              {s.materials.length > 0 && <p className="small">Materials: {s.materials.join(", ")}</p>}
-              {s.uncertain_points.length > 0 && (
-                <>
-                  <p className="small">
-                    <strong>Please check:</strong>
-                  </p>
-                  <ul className="small">
-                    {s.uncertain_points.map((u) => (
-                      <li key={u}>{u}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
+              <p className="pre small"><strong>Draft:</strong> {s.description}</p>
               <button type="button" className="btn btn-small" onClick={applySuggestions}>
-                {t("listing.aiApply")}
+                Use This Draft in Form Below
               </button>
             </div>
           )}
         </div>
 
-        {/* Step 3: the editable review form */}
+        {/* Step 4: Listing Details */}
         <div className="card card-body form">
+          <h3>4. Product Listing Details</h3>
+
           <label>
-            {t("listing.title")}
-            <input value={form.title} onChange={set("title")} maxLength={120} />
+            Listing Title *
+            <input value={form.title} onChange={set("title")} placeholder="e.g. Hand-painted Blue Pottery Planter" maxLength={120} required />
           </label>
+
           <label>
-            {t("listing.description")}
-            <textarea rows={6} value={form.description} onChange={set("description")} maxLength={2000} />
-          </label>
-          <label>
-            {t("listing.category")}
-            <select value={form.category} onChange={set("category")}>
-              <option value="">-</option>
+            Craft Category *
+            <select value={form.category} onChange={set("category")} required>
+              <option value="">Select a category...</option>
               {(categories.data || []).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </label>
+
+          <label>
+            Handcrafted Materials & Technique
+            <input
+              value={form.materials}
+              onChange={set("materials")}
+              placeholder="e.g. Terracotta clay, natural mineral slip, woodblock print, mulberry silk"
+              maxLength={300}
+            />
+          </label>
+
+          <label>
+            Search Tags (comma-separated)
+            <input
+              value={form.tags}
+              onChange={set("tags")}
+              placeholder="e.g. diwali, pooja, handmade, planter, balcony, gift"
+              maxLength={300}
+            />
+          </label>
+
+          <label>
+            Full Description *
+            <textarea
+              rows={6}
+              value={form.description}
+              onChange={set("description")}
+              placeholder="Describe the craft tradition, dimensions, colors, and care instructions..."
+              maxLength={2000}
+              required
+            />
+          </label>
+
           <div className="grid grid-3">
             <label>
-              {t("listing.price")}
-              <input type="number" min="1" step="1" value={form.price} onChange={set("price")} />
+              Price (₹) *
+              <input type="number" min="1" step="1" value={form.price} onChange={set("price")} required />
             </label>
             <label>
-              {t("listing.stock")}
-              <input type="number" min="0" step="1" value={form.stock} onChange={set("stock")} />
+              Available Stock *
+              <input type="number" min="0" step="1" value={form.stock} onChange={set("stock")} required />
             </label>
             <label>
-              {t("listing.shippingFee")}
+              Estimated Shipping Fee (₹)
               <input type="number" min="0" step="1" value={form.shipping_fee} onChange={set("shipping_fee")} />
             </label>
           </div>
@@ -298,12 +420,16 @@ export default function ListingForm() {
           {aiAssisted && (
             <label className="radio">
               <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-              {t("listing.confirm")}
+              I have verified the AI suggestions and confirm that the dimensions, materials, and claims are accurate.
             </label>
           )}
 
+          <div className="alert alert-info small">
+            🛡️ <strong>Admin Quality Review:</strong> When submitted, your listing enters the Admin Review Queue. An admin will review the photo quality and description before publishing it live to buyers.
+          </div>
+
           <button className="btn" disabled={saving}>
-            {saving ? t("common.loading") : editing ? t("listing.saveChanges") : t("listing.publish")}
+            {saving ? "Saving..." : editing ? "Update Listing" : "Submit Listing for Review"}
           </button>
         </div>
       </form>

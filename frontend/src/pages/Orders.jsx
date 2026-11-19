@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { api, assetUrl } from "../api";
+import DisputeModal from "../components/DisputeModal";
+import ReviewModal from "../components/ReviewModal";
 import { EmptyState, ErrorBox, Loading, Notice } from "../components/States";
 import { useAuth } from "../context/AuthContext";
 import { useFetch } from "../hooks";
 import { useLang } from "../i18n";
 import { formatDate, formatINR } from "../utils";
 
-// What the next status can be, for the artisan's update form.
 const NEXT = { placed: ["packed", "shipped"], packed: ["shipped"], shipped: ["delivered"], delivered: [] };
 
 function ShipmentForm({ item, onDone }) {
@@ -26,7 +27,9 @@ function ShipmentForm({ item, onDone }) {
     if ((status === "shipped" || status === "delivered") && (!courier.trim() || !tracking.trim())) {
       return setError("Enter the courier name and tracking ID before marking as shipped.");
     }
-    if (!/^[A-Za-z0-9\-/ ]*$/.test(tracking)) return setError("Tracking ID can only contain letters, numbers, spaces, - and /.");
+    if (!/^[A-Za-z0-9\-/ ]*$/.test(tracking)) {
+      return setError("Tracking ID can only contain letters, numbers, spaces, - and /.");
+    }
     setBusy(true);
     setError("");
     try {
@@ -40,7 +43,7 @@ function ShipmentForm({ item, onDone }) {
   };
 
   return (
-    <form className="ship-form" onSubmit={submit}>
+    <form className="ship-form" onSubmit={submit} style={{ marginTop: "0.5rem" }}>
       <ErrorBox message={error} />
       <div className="row wrap">
         <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t("seller.updateStatus")}>
@@ -60,14 +63,18 @@ function ShipmentForm({ item, onDone }) {
   );
 }
 
-// Shows a list of orders. Buyers see their own, artisans see orders with their items, admins see all.
 export function OrdersView({ placedId }) {
   const { user } = useAuth();
   const { t } = useLang();
   const { data, loading, error, reload } = useFetch(() => api.orders(), []);
-  const isArtisan = user.role === "artisan";
+  const [reviewItem, setReviewItem] = useState(null);
+  const [disputeItem, setDisputeItem] = useState(null);
+  const [selectedDispute, setSelectedDispute] = useState(null);
 
-  if (loading) return <Loading />;
+  const isBuyer = user?.role === "buyer";
+  const isArtisan = user?.role === "artisan";
+
+  if (loading) return <Loading text="Loading order history..." />;
   if (error) return <ErrorBox message={error} onRetry={reload} />;
   if (data.length === 0)
     return (
@@ -81,47 +88,187 @@ export function OrdersView({ placedId }) {
 
   return (
     <>
-      {placedId && <Notice kind="success">Order #{placedId} placed (test payment). Thank you!</Notice>}
+      {placedId && <Notice kind="success">Order #{placedId} placed successfully (simulated demo payment). Thank you!</Notice>}
+
       {data.map((o) => (
-        <div key={o.id} className="card card-body order">
+        <div key={o.id} className="card card-body order" style={{ marginBottom: "1.25rem" }}>
           <div className="between wrap">
-            <strong>Order #{o.id}</strong>
-            <span className={`status status-${o.status}`}>{t(`status.${o.status}`)}</span>
+            <div>
+              <strong>Order #{o.id}</strong>
+              <span className={`status status-${o.status}`} style={{ marginLeft: "0.5rem" }}>
+                {t(`status.${o.status}`)}
+              </span>
+              {o.payment_status === "refunded_test" && (
+                <span className="badge-tier" style={{ background: "#fee2e2", color: "#991b1b", marginLeft: "0.5rem" }}>
+                  Refund Processed
+                </span>
+              )}
+            </div>
+            <span className="small muted">
+              {t("orders.placedOn")} {formatDate(o.created_at)}
+            </span>
           </div>
-          <p className="small muted">
-            {t("orders.placedOn")} {formatDate(o.created_at)} · {o.payment_note}
+
+          <p className="small muted" style={{ margin: "0.3rem 0" }}>
+            {o.payment_note}
           </p>
+
           {o.buyer && (
             <p className="small">
               {t("orders.customer")}: {o.buyer.name} · {o.shipping.name}, {o.shipping.address}, {o.shipping.city} {o.shipping.pincode} · {o.shipping.phone}
             </p>
           )}
+
           {o.items.map((i) => (
             <div key={i.id} className="order-item">
               <img src={assetUrl(i.image_url)} alt="" />
               <div className="grow">
-                <strong>{i.title}</strong> × {i.quantity}
-                <p className="small muted">
-                  {t("common.by")} {i.artisan_name} · {formatINR(i.price * i.quantity)} + {t("product.shipping")} {formatINR(i.shipping_fee)}
+                <div className="between">
+                  <strong>{i.title} × {i.quantity}</strong>
+                  <span className="price">{formatINR(i.line_total)}</span>
+                </div>
+
+                <p className="small muted" style={{ margin: "0.15rem 0" }}>
+                  {t("common.by")} {i.artisan_name}
                 </p>
-                <p className="small">
-                  <span className={`status status-${i.status}`}>{t(`status.${i.status}`)}</span>
-                  {i.courier_name && (
-                    <>
-                      {" "}
-                      · {t("orders.courier")}: {i.courier_name} · {t("orders.tracking")}: {i.tracking_id}
-                    </>
+
+                <div className="between wrap" style={{ marginTop: "0.25rem" }}>
+                  <p className="small" style={{ margin: 0 }}>
+                    Status: <span className={`status status-${i.status}`}>{t(`status.${i.status}`)}</span>
+                    {i.courier_name && (
+                      <span> · {t("orders.courier")}: {i.courier_name} · Track: {i.tracking_id}</span>
+                    )}
+                  </p>
+
+                  {/* Actions for buyer */}
+                  {isBuyer && (
+                    <div className="row" style={{ gap: "0.4rem" }}>
+                      {i.has_reviewed ? (
+                        <span className="small" style={{ color: "#15803d", fontWeight: 600 }}>
+                          ✓ Reviewed
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-small"
+                          onClick={() => setReviewItem({ ...i, order_id: o.id })}
+                        >
+                          ⭐ Write Review
+                        </button>
+                      )}
+
+                      {i.has_dispute ? (
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-small"
+                          style={{ borderColor: "#ea580c", color: "#c2410c" }}
+                          onClick={async () => {
+                            const d = await api.dispute(i.dispute_id);
+                            setSelectedDispute(d);
+                          }}
+                        >
+                          ⚠️ View Dispute
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="linklike small"
+                          style={{ color: "#b45309" }}
+                          onClick={() => setDisputeItem({ ...i, order_id: o.id })}
+                        >
+                          Need Help? Dispute
+                        </button>
+                      )}
+                    </div>
                   )}
-                </p>
+                </div>
+
                 {isArtisan && <ShipmentForm item={i} onDone={reload} />}
               </div>
             </div>
           ))}
-          <p className="between total">
+
+          <p className="between total" style={{ marginTop: "0.75rem", borderTop: "1px dashed var(--border)", paddingTop: "0.5rem" }}>
             <span>{t("cart.total")}</span> <span>{formatINR(o.total)}</span>
           </p>
         </div>
       ))}
+
+      {/* Review Modal */}
+      {reviewItem && (
+        <ReviewModal
+          item={reviewItem}
+          onClose={() => setReviewItem(null)}
+          onSuccess={reload}
+        />
+      )}
+
+      {/* Dispute Modal */}
+      {disputeItem && (
+        <DisputeModal
+          item={disputeItem}
+          orderId={disputeItem.order_id}
+          onClose={() => setDisputeItem(null)}
+          onSuccess={reload}
+        />
+      )}
+
+      {/* Dispute Details View Modal */}
+      {selectedDispute && (
+        <div className="modal-backdrop" onClick={() => setSelectedDispute(null)}>
+          <div className="modal" style={{ width: "min(560px, 100%)", textAlign: "left" }} onClick={(e) => e.stopPropagation()}>
+            <div className="between">
+              <h3>Dispute Case #{selectedDispute.id}</h3>
+              <span className={`status status-${selectedDispute.status}`}>
+                {selectedDispute.status.replace("_", " ").toUpperCase()}
+              </span>
+            </div>
+
+            <p className="small muted">
+              Order #{selectedDispute.order_id} · Reason: <strong>{selectedDispute.reason}</strong>
+            </p>
+
+            <div className="card card-body" style={{ background: "#f8fafc", padding: "0.75rem", margin: "0.75rem 0" }}>
+              <div className="small"><strong>Buyer Statement:</strong></div>
+              <p className="small pre" style={{ margin: "0.2rem 0" }}>{selectedDispute.description}</p>
+              <div className="small muted" style={{ marginTop: "0.4rem" }}>
+                Requested: {selectedDispute.requested_resolution.replace("_", " ")} (₹{selectedDispute.requested_amount})
+              </div>
+            </div>
+
+            {selectedDispute.resolution_decision && (
+              <div className="alert alert-info small">
+                <strong>Case Decision:</strong> {selectedDispute.resolution_decision.replace("_", " ").toUpperCase()}
+                {selectedDispute.refunded_amount > 0 && (
+                  <div>
+                    Refund: ₹{selectedDispute.refunded_amount} (Ref: {selectedDispute.refund_reference})
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: "1rem" }}>
+              <strong>Case Timeline & Messages</strong>
+              <div className="audit-timeline">
+                {selectedDispute.messages?.map((m) => (
+                  <div key={m.id} className="audit-node">
+                    <strong>{m.sender_name} ({m.sender_role}):</strong> {m.message}
+                    <div className="small muted">
+                      {new Date(m.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ textAlign: "right", marginTop: "1rem" }}>
+              <button type="button" className="btn btn-small" onClick={() => setSelectedDispute(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
