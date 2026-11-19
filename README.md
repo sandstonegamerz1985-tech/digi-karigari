@@ -14,25 +14,24 @@ payments are simulated, sample data is fictional, and nothing here is production
 
 | Feature | Status | Notes |
 |---|---|---|
-| Home, catalog, product pages, artisan profiles | **Implemented** | |
-| Buyer / artisan / admin accounts | **Implemented** | Simple token login, fine for a demo |
-| Seller create / edit / delete listings with photos | **Implemented** | Safe upload checks (type, size, random names) |
-| Admin approves / rejects artisans, Verified badge | **Implemented** | |
-| Cart and checkout | **Implemented** | Payment itself is simulated (below) |
-| Order history, status tracking, manual courier + tracking ID | **Implemented** | No courier API |
-| Keyword search, category and price filters | **Implemented** | Simple text matching |
-| Loading, empty, validation and error states | **Implemented** | |
-| AI listing assistant | **Demo-only** until you add a key | Mock mode does *not* look at the photo. Live mode is wired for a vision model. Suggestions are never auto-published |
-| Test payment | **Demo-only** | Success/fail switch. No card data, no real money |
-| Similar products | **Demo-only** | Just "same category" |
-| English / Hindi | **Demo-only** | First-visit language popup + navbar switch. Menus, buttons, headings and form labels are translated; seller-written text, AI text, server error messages and policy pages are English |
-| Admin basic counts | **Demo-only** | A few totals only |
-| Terms / privacy / shipping / refund pages | **Demo-only** | Placeholder text, not legal advice |
-| Semantic search, smart recommendations | Planned | |
-| AI photo-quality advisory | **Implemented (Gemini live mode)** | Guidance only; artisan reviews the photo. Category is suggested separately; automated category-match checking is still planned |
-| Buyer-artisan messaging, notifications | Planned | |
-| Reviews, disputes, refunds, seller trust tiers | Planned | |
-| Full admin dashboard and analytics | Planned | |
+| Home, catalog, product pages, artisan profiles | **Implemented** | Responsive artisan-focused catalog |
+| Buyer / artisan / admin accounts | **Implemented** | Role-based token auth (buyer, artisan, admin) |
+| Seller create / edit / delete listings with photos | **Implemented** | Safe upload checks, craft materials & tags |
+| Admin approves / rejects artisans, Verified badge | **Implemented** | Verification workflow with rejection feedback |
+| Cart and checkout | **Implemented** | Multi-item cart and order placement |
+| Order history, status tracking, manual courier + tracking ID | **Implemented** | Placed -> Packed -> Shipped -> Delivered pipeline |
+| Keyword search, category and price filters | **Implemented** | Multi-attribute catalog filtering |
+| Loading, empty, validation and error states | **Implemented** | Accessible feedback states across all pages |
+| Semantic search | **Implemented** | Meaning-based search by use, style, material, occasion, and intent with transparent local heuristic provider interface |
+| Similar-product recommendations | **Implemented** | Multi-factor similarity on category, material, style, and craft with human-readable reasons (e.g. "Similar material") |
+| AI photo-quality advisory & category match | **Implemented** | Advisory checks for blur, lighting, dimensions, and category consistency. Disclaimers clearly state admin makes final decision |
+| Buyer-artisan messaging and notifications | **Implemented** | Split-pane inbox, message threads linked to products/orders, unread tracking, and real-time event notifications |
+| Verified purchase reviews | **Implemented** | 1-5 star ratings, duplicate review prevention per purchase, rating summaries, and admin moderation controls |
+| Disputes and refunds | **Implemented** | Dispute filing, counterparty messaging timeline, admin resolution, audit logs, and simulated mock payment refund gateway |
+| Seller trust tiers | **Implemented** | 4-tier transparent progression (New Maker -> Verified -> Trusted -> Master) from orders & ratings, with admin override audit trail |
+| Full admin dashboard and analytics | **Implemented** | Role-protected analytics (sales, conversion, disputes, review trends, date/category filters), listing review queue, and moderation |
+| Test payment & refund gateway | **Demo-only** | Simulated mock payment and refund provider with transaction references and audit trail. No real bank cards or currency |
+| Terms / privacy / shipping / refund pages | **Demo-only** | Demonstration policy text |
 
 The same list is available in the running app at **/features**, and from the API at `GET /api/features`.
 Planned endpoints (`/api/planned/...`) return **501 Not Implemented** on purpose.
