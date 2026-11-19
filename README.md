@@ -95,7 +95,7 @@ Password for every account: `demo1234` (the Login page has quick-fill buttons).
 | Artisan (approved, Verified) | meera@, ramesh@, fatima@ `digikarigari-demo.com` |
 | Artisan (**pending**) | sanjay@digikarigari-demo.com |
 
-All artisans and products are **fictional**. Most product images are simple placeholders; Nisha's Kutchi cushion cover uses a representative Wikimedia Commons photo. See `backend/uploads/seed/IMAGE_ATTRIBUTION.md` for its source and license.
+All artisans and products are **fictional**. Demo listings use manually selected representative craft photos from Wikimedia Commons (with the Kutchi cushion cover photo bundled locally); these are not photos of the fictional sellers' exact items. See `backend/uploads/seed/IMAGE_ATTRIBUTION.md` for image credits and licenses.
 
 ### Suggested demo script (5 minutes)
 
@@ -312,3 +312,4 @@ Check it worked: open the Add listing form as an approved artisan; the AI box sh
 | AI error 502 | Check the key and model name; you can always fill the form by hand |
 | `npm install` fails | Check internet, Node 18+, and try deleting `node_modules` and running again |
 | Want a clean start | Stop the backend, delete `backend/digi_karigari.db`, run `python -m app.seed --reset` |
+

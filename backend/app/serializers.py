@@ -4,6 +4,7 @@ Keeping every response shape in ONE file helps the frontend and backend stay in 
 """
 import json
 from typing import Optional
+from urllib.parse import urlsplit
 
 from .models import (
     ArtisanProfile,
@@ -24,6 +25,8 @@ from .services.trust_tier_service import TIER_DEFINITIONS
 
 
 def image_url(relative_path: Optional[str]) -> Optional[str]:
+    if relative_path and urlsplit(relative_path).scheme in {"http", "https"}:
+        return relative_path
     return f"/uploads/{relative_path}" if relative_path else None
 
 
@@ -332,3 +335,4 @@ def serialize_dispute(d: Dispute) -> dict:
             for a in d.audits
         ],
     }
+

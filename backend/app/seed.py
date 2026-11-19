@@ -13,6 +13,7 @@ import secrets
 import shutil
 import sys
 import textwrap
+from urllib.parse import quote
 
 from . import models  # noqa: F401
 from .config import settings
@@ -184,6 +185,45 @@ PRODUCTS = [
      "Home Decor", 1250, 8, 60, ("#c2410c", "#78350f"), "Cotton, Embroidery thread, Mirror work", "kutchi embroidery, cushion cover, mirror work, home decor, handmade"),
 ]
 
+# Wikimedia Commons photos selected by hand as representative demo imagery.
+# Many seed listings represent the same craft category, so they share a category
+# photo when an exact item photo is unavailable. Product 29 keeps its bundled photo.
+def commons_image(filename: str) -> str:
+    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(filename)}?width=960"
+
+
+DEMO_IMAGE_BY_NUMBER = {
+    1: commons_image("Madhubani painting.jpg"),
+    2: commons_image("Madhubani Painting.jpg"),
+    3: commons_image("Blue pottery from Jaipur.jpg"),
+    4: commons_image("India pottery.jpg"),
+    5: commons_image("Blue pottery from Jaipur.jpg"),
+    6: commons_image("Chikankari of lucknow.jpg"),
+    7: commons_image("Chikankari motif of 17th Century.jpg"),
+    8: commons_image("Printing block from India.jpg"),
+    9: commons_image("Indian Wood Carving.JPG"),
+    10: commons_image("Earring handmade.jpg"),
+    11: commons_image("Indian Arati diya.jpg"),
+    12: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
+    13: commons_image("Bamboo -basket.jpg"),
+    14: commons_image("Indian Wood Carving.JPG"),
+    15: commons_image("Printing block from India.jpg"),
+    16: commons_image("Indian traditional necklace.jpg"),
+    17: commons_image("Earring handmade.jpg"),
+    18: commons_image("Indian Wood Carving.JPG"),
+    19: commons_image("Indian Wood Carving.JPG"),
+    20: commons_image("Madhubani painting.jpg"),
+    21: commons_image("Bowl MET sf19-176-4d.jpg"),
+    22: commons_image("Indian Arati diya.jpg"),
+    23: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
+    24: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
+    25: commons_image("Bamboo -basket.jpg"),
+    26: commons_image("Bamboo -basket.jpg"),
+    27: commons_image("Diya Diwali India.jpg"),
+    28: commons_image("Printing block from India.jpg"),
+    29: "seed/product-29.jpg",
+}
+
 
 def make_svg(title: str, c1: str, c2: str) -> str:
     lines = textwrap.wrap(title, 22)[:3]
@@ -261,11 +301,7 @@ def run(reset: bool = False) -> None:
         for n, (key, title, desc, cat, price, stock, ship, (c1, c2), mats, tags) in enumerate(PRODUCTS, start=1):
             if title in existing_titles:
                 continue
-            filename = (
-                "seed/product-29.jpg"
-                if title == "Kutchi Mirror-work Cushion Cover"
-                else f"seed/product-{n}.svg"
-            )
+            filename = DEMO_IMAGE_BY_NUMBER.get(n, f"seed/product-{n}.svg")
             advisory = {
                 "provider": "local_image_advisory_heuristic",
                 "is_ai_powered": False,
@@ -290,14 +326,15 @@ def run(reset: bool = False) -> None:
             created.append(product)
         db.flush()
 
-        # Switch an already-seeded prototype listing from its old vector placeholder
-        # to the bundled, attributed sample photo without duplicating the product.
-        demo_cushion = db.query(Product).filter_by(title="Kutchi Mirror-work Cushion Cover").first()
-        if demo_cushion:
-            if demo_cushion.images:
-                demo_cushion.images[0].filename = "seed/product-29.jpg"
-            else:
-                demo_cushion.images.append(ProductImage(filename="seed/product-29.jpg", position=0))
+        # Refresh photos for already-seeded demo products without duplicating listings.
+        for n, item in enumerate(PRODUCTS, start=1):
+            product = db.query(Product).filter_by(title=item[1]).first()
+            if product:
+                filename = DEMO_IMAGE_BY_NUMBER.get(n, f"seed/product-{n}.svg")
+                if product.images:
+                    product.images[0].filename = filename
+                else:
+                    product.images.append(ProductImage(filename=filename, position=0))
 
         # Seed sample orders with delivered items and verified reviews
         p_fish = db.query(Product).filter(Product.title.like("%Fish Painting%")).first()
@@ -461,3 +498,4 @@ def run(reset: bool = False) -> None:
 
 if __name__ == "__main__":
     run(reset="--reset" in sys.argv)
+
