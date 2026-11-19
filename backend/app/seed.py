@@ -60,6 +60,8 @@ ARTISANS = [
      "Bimal weaves bamboo and cane homewares by hand using locally sourced materials."),
     ("vikram", "Vikram Singh", "vikram@digikarigari-demo.com", "Wood carving", "Saharanpur", "Uttar Pradesh", "approved",
      "Vikram hand-carves small homewares from responsibly sourced sheesham wood."),
+    ("nisha", "Nisha Rabari", "nisha@digikarigari-demo.com", "Kutchi embroidery", "Bhuj", "Gujarat", "approved",
+     "Nisha creates colourful Kutchi embroidery for everyday home decor, using traditional mirror work and geometric stitches."),
 ]
 
 # artisan key, title, description, category, price, stock, shipping, colours, materials, tags
@@ -176,6 +178,10 @@ PRODUCTS = [
      "A 40 x 40 cm cotton cushion cover printed by hand with wooden blocks, closed with a hidden zip. "
      "Cover only, without the insert. Wash separately in cold water.",
      "Home Decor", 560, 13, 50, ("#9333ea", "#581c87"), "Cotton, Hand block print", "cushion cover, home decor, living room"),
+    ("nisha", "Kutchi Mirror-work Cushion Cover",
+     "A 40 x 40 cm cotton cushion cover decorated with colourful Kutchi embroidery and small mirror-work accents. "
+     "Each piece is stitched by hand; pattern and colour placement may vary. Cover only, without the insert.",
+     "Home Decor", 1250, 8, 60, ("#c2410c", "#78350f"), "Cotton, Embroidery thread, Mirror work", "kutchi embroidery, cushion cover, mirror work, home decor, handmade"),
 ]
 
 
