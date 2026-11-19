@@ -243,7 +243,7 @@ Do the **backend first**, because the frontend needs its address.
    the web service `digi-karigari-api` **and** a free Postgres database `digi-karigari-db`.
 2. Wait for the first deploy to finish (a few minutes). Open `https://<your-service>.onrender.com/api/health`;
    it should show `{"status":"ok"}`. Your backend address is that `https://<your-service>.onrender.com`.
-3. In production, startup adds any missing fictional handmade sample products across all nine craft categories (29 sample listings), including Nisha Rabari's Kutchi mirror-work cushion cover. Locally, set `AUTO_SEED=true` for the same behavior. Seeding preserves existing users, orders, and products; on a database that already has users, newly created sample artisan accounts receive random passwords, and no demo admin or buyer account is added. Placeholder product images are labeled as samples.
+3. Startup adds any missing fictional handmade sample products across all nine craft categories (29 sample listings), including Nisha Rabari's Kutchi mirror-work cushion cover, when running in production, when `AUTO_SEED=true`, or when the database has no products. Seeding preserves existing users, orders, and products; on a database that already has users, newly created sample artisan accounts receive random passwords, and no demo admin or buyer account is added. Placeholder product images are labeled as samples.
    On a brand-new database, the usual demo accounts use password `demo1234`.
 
 ### Step 2: frontend on Vercel

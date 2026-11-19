@@ -9,7 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from . import models  # noqa: F401  (importing registers the tables)
 from . import seed
 from .config import settings
-from .database import Base, engine
+from .database import Base, SessionLocal, engine
+from .models import Product
 from .routers import (
     admin,
     ai,
@@ -41,9 +42,13 @@ async def lifespan(app: FastAPI):
         settings.AI_PROVIDER,
     )
     seed.ensure_seed_images()
-    # Keep a production prototype from coming up with an empty catalog if the
-    # Render service was created without syncing AUTO_SEED from render.yaml.
-    if settings.AUTO_SEED or settings.APP_ENV == "production":
+    # Keep a prototype from coming up with an empty catalog if Render was
+    # created without syncing AUTO_SEED or APP_ENV from render.yaml.
+    should_seed = settings.AUTO_SEED or settings.APP_ENV == "production"
+    if not should_seed:
+        with SessionLocal() as db:
+            should_seed = db.query(Product.id).first() is None
+    if should_seed:
         seed.run()
     yield
 
