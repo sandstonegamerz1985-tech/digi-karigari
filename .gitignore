@@ -1,11 +1,20 @@
+# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
 venv/
+
+# Environment files and secrets
 .env
+.env.*
+!.env.example
+
+# Local databases and uploaded user content
 backend/*.db
 backend/uploads/*
 !backend/uploads/seed/
+
+# JavaScript build artifacts
 node_modules/
 dist/
