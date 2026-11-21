@@ -4,8 +4,8 @@ Run from the backend folder:
     python -m app.seed            # adds missing fictional sample products
     python -m app.seed --reset    # wipes everything and seeds again
 
-All artisans and products below are made up for the demo. The product pictures are generated
-placeholder images (SVG), not real photos.
+All artisans and products below are fictional demo listings. Product photos are manually selected
+representative images; their source credits are documented in backend/uploads/seed/IMAGE_ATTRIBUTION.md.
 """
 import html
 import json
@@ -185,42 +185,42 @@ PRODUCTS = [
      "Home Decor", 1250, 8, 60, ("#c2410c", "#78350f"), "Cotton, Embroidery thread, Mirror work", "kutchi embroidery, cushion cover, mirror work, home decor, handmade"),
 ]
 
-# Wikimedia Commons photos selected by hand as representative demo imagery.
-# Many seed listings represent the same craft category, so they share a category
-# photo when an exact item photo is unavailable. Product 29 keeps its bundled photo.
+# Wikimedia Commons photos selected by hand to match each demo listing's item type,
+# material, and craft as closely as possible. These are illustrative references,
+# not photos of the fictional sellers' exact inventory. Product 29 uses its bundled photo.
 def commons_image(filename: str) -> str:
     return f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(filename)}?width=960"
 
 
 DEMO_IMAGE_BY_NUMBER = {
-    1: commons_image("Madhubani painting.jpg"),
-    2: commons_image("Madhubani Painting.jpg"),
+    1: commons_image("Madhubani painting by Bhuvana Meenakshi.jpg"),
+    2: commons_image("Madhubani painting.jpg"),
     3: commons_image("Blue pottery from Jaipur.jpg"),
-    4: commons_image("India pottery.jpg"),
-    5: commons_image("Blue pottery from Jaipur.jpg"),
+    4: commons_image("Surahi in the Indian Museum, Kolkata.jpg"),
+    5: commons_image("Blue Pottery Jaipur Collection.jpg"),
     6: commons_image("Chikankari of lucknow.jpg"),
-    7: commons_image("Chikankari motif of 17th Century.jpg"),
-    8: commons_image("Printing block from India.jpg"),
-    9: commons_image("Indian Wood Carving.JPG"),
+    7: commons_image("Chikan embroidery on a saree pallu.jpg"),
+    8: commons_image("Ajrak.jpg"),
+    9: commons_image("Wood carvings of elephants 02.jpg"),
     10: commons_image("Earring handmade.jpg"),
     11: commons_image("Indian Arati diya.jpg"),
-    12: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
-    13: commons_image("Bamboo -basket.jpg"),
-    14: commons_image("Indian Wood Carving.JPG"),
-    15: commons_image("Printing block from India.jpg"),
+    12: commons_image("Red leather credit card holder.jpg"),
+    13: commons_image("Bamboo Basket.jpg"),
+    14: commons_image("Wooden Tray.jpg"),
+    15: commons_image("Ajrak.jpg"),
     16: commons_image("Indian traditional necklace.jpg"),
-    17: commons_image("Earring handmade.jpg"),
-    18: commons_image("Indian Wood Carving.JPG"),
-    19: commons_image("Indian Wood Carving.JPG"),
-    20: commons_image("Madhubani painting.jpg"),
-    21: commons_image("Bowl MET sf19-176-4d.jpg"),
-    22: commons_image("Indian Arati diya.jpg"),
-    23: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
-    24: commons_image("Rajasthani style Leather Jooti,local artwork Jaipur India.jpg"),
-    25: commons_image("Bamboo -basket.jpg"),
-    26: commons_image("Bamboo -basket.jpg"),
-    27: commons_image("Diya Diwali India.jpg"),
-    28: commons_image("Printing block from India.jpg"),
+    17: commons_image("Metal bangles.jpg"),
+    18: commons_image("Wooden jewelry box 2023-12-06.jpg"),
+    19: commons_image("A wooden coaster (6985425465).jpg"),
+    20: commons_image("Madhubani Painting 2.jpg"),
+    21: commons_image("Vintage brass bowls 1.jpg"),
+    22: commons_image("Brass thali with lamp.jpg"),
+    23: commons_image("Leather passport holder - DPLA - b03041bf4866ab57b22cf5868254e1aa (page 1).jpg"),
+    24: commons_image("Chamois leather and silver bookmark.JPG"),
+    25: commons_image("Light bamboo tray.jpg"),
+    26: commons_image("Bamboo mat.jpg"),
+    27: commons_image("Diya set in a rangoli.jpg"),
+    28: commons_image("Block-print cushion Cover.jpg"),
     29: "seed/product-29.jpg",
 }
 
